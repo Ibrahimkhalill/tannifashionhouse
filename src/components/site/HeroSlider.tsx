@@ -3,9 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import heroImg from "@/assets/hero-shopping.png";
 import type { HeroSlide } from "@/lib/content-types";
 import { HeroSkeleton } from "./skeletons";
+
+// Used only when a slide has no image of its own.
+const FALLBACK_HERO_IMG =
+  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop";
 
 export function HeroSlider() {
   const [slides, setSlides] = useState<HeroSlide[] | null>(null);
@@ -46,7 +49,7 @@ export function HeroSlider() {
             className={`absolute inset-0 transition-opacity duration-[900ms] ease-out ${idx === i ? "opacity-100" : "opacity-0 pointer-events-none"}`}
           >
             <img
-              src={s.image || heroImg.src}
+              src={s.image || FALLBACK_HERO_IMG}
               alt={s.title}
               className={`absolute inset-0 size-full object-cover transition-transform duration-[6000ms] ease-out ${idx === i ? "scale-105" : "scale-100"}`}
             />

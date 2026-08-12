@@ -335,7 +335,6 @@ html, button, a, label {
     position: absolute;
     right: -18px;
     bottom: 4px;
-    background-image: url("../assets/shape-1.png");
     background-repeat: no-repeat;
     background-size: 100%;
 }
@@ -347,7 +346,6 @@ html, button, a, label {
     position: absolute;
     left: -16px;
     bottom: -1px;
-     background-image: url("../assets/shape-1.png");
     background-repeat: no-repeat;
     background-size: 100%;
     -webkit-transform: translateY(-50%) rotate(270deg);
