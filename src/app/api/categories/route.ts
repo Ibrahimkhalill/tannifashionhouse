@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// Cache for 60s per unique query string — see /api/hero-slides for why.
+export const revalidate = 60;
+
 // GET /api/categories
 // ?parent=true   → only top-level (parentId = null)
 // ?slug=fashion  → subcategories of that parent

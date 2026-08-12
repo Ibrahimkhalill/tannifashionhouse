@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// Cache each unique query string (category/brand/search/sort/page/...) for
+// 60s — homepage sections (featured/trending/new) repeat the exact same
+// request on every visit, so this turns most loads into a cache hit instead
+// of a fresh DB round trip. Admin product changes show up within a minute.
+export const revalidate = 60;
+
 // GET /api/products
 // Query params:
 //   ?category=fashion   filter by category slug

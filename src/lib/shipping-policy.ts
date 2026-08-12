@@ -21,9 +21,9 @@ export const DEFAULT_SHIPPING_POLICY: ShippingPolicy = {
   returns: {
     title: "Returns & exchanges",
     items: [
-      "7-day return window from delivery",
-      "Item must be unused, original packaging",
-      "Free return pickup in Dhaka",
+      "Check your item at the time of delivery",
+      "Not satisfied? Return it right away with the delivery agent",
+      "Item must be unused, in original packaging",
       "Refund processed within 3–5 days",
     ],
   },

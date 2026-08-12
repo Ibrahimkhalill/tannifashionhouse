@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// Cache each product page's data for 60s — cuts the product page's slowest
+// fetch down to a cache hit on repeat/popular views.
+export const revalidate = 60;
+
 // GET /api/products/:id
 // :id can be the product slug (preferred for SEO) or the cuid
 export async function GET(

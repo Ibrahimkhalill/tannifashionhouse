@@ -791,8 +791,8 @@ function ProductPage() {
             <p className="flex gap-3 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
               <RotateCcw className="mt-0.5 size-4 shrink-0 text-foreground" strokeWidth={2} />
               <span>
-                Return within <span className="font-semibold text-foreground">7 days</span> of
-                delivery. Items must be unworn with tags.
+                <span className="font-semibold text-foreground">Check at delivery</span> — inspect
+                your item when it arrives and return it right away if you&apos;re not satisfied.
               </span>
             </p>
           </div>

@@ -52,16 +52,22 @@ export function Header() {
   }, [menu]);
 
   const [results, setResults] = useState<Product[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     const query = q.trim();
-    if (!query) { setResults([]); return; }
+    if (!query) { setResults([]); setSearching(false); return; }
+    // Flip to "searching" right away so the dropdown shows a loading state
+    // instead of flashing "No matches" while the debounced fetch is pending.
+    setSearching(true);
     const ctrl = new AbortController();
     const t = setTimeout(() => {
       fetch(`/api/products?search=${encodeURIComponent(query)}&limit=6`, { signal: ctrl.signal })
         .then((r) => r.json())
-        .then(({ products }) => setResults(products ?? []))
-        .catch(() => {});
+        .then(({ products }) => { setResults(products ?? []); setSearching(false); })
+        // An aborted request means a newer keystroke superseded it — its own
+        // request owns the searching/results state now, so leave it alone.
+        .catch((e) => { if (e.name !== "AbortError") { setResults([]); setSearching(false); } });
     }, 200);
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [q]);
@@ -135,7 +141,7 @@ export function Header() {
               href="/"
               className="absolute left-1/2 flex shrink-0 -translate-x-1/2 items-center md:static md:mr-4 md:translate-x-0 lg:mr-6"
             >
-              <Image src={logo} alt="Tanni Fashion House" priority className="size-14 rounded-md object-contain lg:size-16" />
+              <Image src={logo} alt="Tanni Fashion House" priority className="size-10 rounded-md object-contain sm:size-12 lg:size-16" />
             </Link>
 
             {/* Desktop search */}
@@ -300,7 +306,19 @@ export function Header() {
             className="pointer-events-auto fixed z-[500] hidden max-h-[min(22rem,70svh)] overflow-hidden overflow-y-auto overscroll-contain rounded-xl border border-border/90 bg-card shadow-xl ring-1 ring-foreground/[0.04] animate-slide-down md:block"
             style={{ top: searchPopover.top, left: searchPopover.left, width: searchPopover.width }}
           >
-            {results.length === 0 ? (
+            {searching && results.length === 0 ? (
+              <ul className="divide-y divide-border/60 py-1">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <li key={i} className="flex items-center gap-3 px-3 py-2">
+                    <span className="size-9 shrink-0 animate-pulse rounded-md bg-secondary" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <span className="block h-3 w-3/4 animate-pulse rounded bg-secondary" />
+                      <span className="block h-2.5 w-1/2 animate-pulse rounded bg-secondary" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : results.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-sm text-muted-foreground">
                   No matches for <span className="font-medium text-foreground">{q}</span>

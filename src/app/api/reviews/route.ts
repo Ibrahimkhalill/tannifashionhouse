@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ReviewSchema, parseBody } from "@/lib/validators";
 
+// Cache each product's review list for 60s (GET only — POST below is never
+// cached regardless of this export).
+export const revalidate = 60;
+
 // GET /api/reviews?productId=xxx
 // productId may be the slug (storefront id) or the cuid.
 // Returns all reviews for a product (public)

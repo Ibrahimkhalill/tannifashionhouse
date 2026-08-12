@@ -6,6 +6,10 @@ import {
   normalizePolicy,
 } from "@/lib/shipping-policy";
 
+// Cache for 5 minutes — this almost never changes and is fetched on every
+// product page view.
+export const revalidate = 300;
+
 // GET /api/shipping-policy — public. Read by the product page's Shipping tab.
 export async function GET() {
   const row = await db.siteConfig.findUnique({ where: { key: SHIPPING_POLICY_KEY } });
