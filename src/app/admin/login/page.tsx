@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Eye, EyeOff, Lock, Phone, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Lock, User, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [phone, setPhone] = useState("");
@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
     try {
       const res = await signIn("credentials", { phone, password, redirect: false });
       if (res?.error) {
-        setError("Invalid phone number or password.");
+        setError("Invalid phone number/email or password.");
         return;
       }
       const session = await fetch("/api/auth/session").then((r) => r.json());
@@ -53,16 +53,16 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1.5 block uppercase tracking-wide">Phone number</label>
+              <label className="text-xs font-semibold text-slate-600 mb-1.5 block uppercase tracking-wide">Phone number or email</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
                   className="w-full h-11 pl-9 pr-4 rounded-xl border border-slate-200 text-sm outline-none focus:border-[#ef4444] focus:ring-2 focus:ring-red-100 transition"
-                  placeholder="01700000000"
+                  placeholder="01700000000 or admin@example.com"
                 />
               </div>
             </div>

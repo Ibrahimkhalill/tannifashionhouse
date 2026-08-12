@@ -72,7 +72,7 @@ export function Footer() {
             {/* Brand column */}
             <div className="col-span-1 sm:col-span-2">
               <Link href="/" className="flex items-center">
-                <Image src={logo} alt="Tanni Fashion House" className="size-16 rounded-xl object-cover" />
+                <Image src={logo} alt="Tanni Fashion House" className="h-28 w-28 rounded-lg object-contain" />
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
                 {t("footer.tagline")}

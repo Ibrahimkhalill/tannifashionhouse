@@ -9,8 +9,9 @@ import { authConfig } from "@/lib/auth.config";
 
 const loginSchema = z.object({
   // Trim so an accidental leading/trailing space (common with copy-paste) never
-  // silently breaks a correct login.
-  phone: z.string().trim().min(10).max(15),
+  // silently breaks a correct login. Accepts either a phone number or an email —
+  // length bounds are loose enough to cover both.
+  phone: z.string().trim().min(5).max(254),
   password: z.string().trim().min(6),
 });
 
@@ -31,9 +32,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { phone, password } = parsed.data;
+        // Field is still named "phone" (so the login forms don't need to change),
+        // but it now doubles as an email login — whichever it looks like.
+        const { phone: identifier, password } = parsed.data;
+        const isEmail = identifier.includes("@");
 
-        const user = await db.user.findUnique({ where: { phone } });
+        const user = await db.user.findUnique({
+          where: isEmail ? { email: identifier } : { phone: identifier },
+        });
         if (!user || !user.password) return null;
 
         const valid = await bcrypt.compare(password, user.password);

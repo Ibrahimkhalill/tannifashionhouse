@@ -135,7 +135,7 @@ export function Header() {
               href="/"
               className="absolute left-1/2 flex shrink-0 -translate-x-1/2 items-center md:static md:mr-4 md:translate-x-0 lg:mr-6"
             >
-              <Image src={logo} alt="Tanni Fashion House" priority className="size-11 rounded-xl object-cover lg:size-13" />
+              <Image src={logo} alt="Tanni Fashion House" priority className="size-14 rounded-md object-contain lg:size-16" />
             </Link>
 
             {/* Desktop search */}
@@ -155,7 +155,14 @@ export function Header() {
             {/* Right icons */}
             <div className="ml-auto flex items-center gap-0.5 lg:gap-1.5">
 
-              {/* Desktop: wishlist + cart */}
+              {/* Desktop: track order + wishlist + cart */}
+              <Link
+                href="/track"
+                aria-label="Track Order"
+                className="hidden rounded-full p-2.5 hover:bg-secondary md:flex lg:p-3"
+              >
+                <Package className="size-5 lg:size-[22px]" />
+              </Link>
               <button
                 onClick={() => setWishlistOpen(true)}
                 aria-label="Wishlist"
@@ -216,7 +223,7 @@ export function Header() {
             {/* Brand header */}
             <div className="flex items-center justify-between px-5 py-4 bg-black text-white shrink-0">
               <Link href="/" onClick={() => setMenu(false)} className="flex items-center">
-                <Image src={logo} alt="Tanni Fashion House" className="size-10 rounded-lg object-cover" />
+                <Image src={logo} alt="Tanni Fashion House" className="size-12 rounded-md object-contain" />
               </Link>
               <button
                 onClick={() => setMenu(false)}
