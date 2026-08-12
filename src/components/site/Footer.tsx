@@ -1,6 +1,8 @@
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useT, dict } from "@/lib/i18n";
+import logo from "@/assets/logo.jpeg";
 
 export function Footer() {
   const { t, lang } = useT();
@@ -26,7 +28,7 @@ export function Footer() {
   ];
 
   const socials = [
-    { Icon: Facebook,  label: "Facebook",  href: "#" },
+    { Icon: Facebook,  label: "Facebook",  href: "https://www.facebook.com/tannifashionhouse" },
     { Icon: Instagram, label: "Instagram", href: "#" },
     { Icon: Twitter,   label: "Twitter",   href: "#" },
     { Icon: Youtube,   label: "YouTube",   href: "#" },
@@ -69,9 +71,8 @@ export function Footer() {
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-4">
             {/* Brand column */}
             <div className="col-span-1 sm:col-span-2">
-              <Link href="/" className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold tracking-tight text-white">Tanni</span>
-                <span className="text-2xl font-bold tracking-tight text-accent">Fashion House</span>
+              <Link href="/" className="flex items-center">
+                <Image src={logo} alt="Tanni Fashion House" className="size-16 rounded-xl object-cover" />
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
                 {t("footer.tagline")}
@@ -100,6 +101,8 @@ export function Footer() {
                   <a
                     key={label}
                     href={href}
+                    target={href.startsWith("http") ? "_blank" : undefined}
+                    rel={href.startsWith("http") ? "noreferrer" : undefined}
                     aria-label={label}
                     className="flex size-9 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:border-accent hover:bg-accent hover:text-white"
                   >

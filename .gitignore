@@ -36,9 +36,6 @@ dist-ssr
 .claude/settings.local.json
 
 # Playwright screenshots & logs (dev only)
-*.png
-*.jpg
-*.jpeg
 .playwright-mcp/
 tsconfig.tsbuildinfo
 

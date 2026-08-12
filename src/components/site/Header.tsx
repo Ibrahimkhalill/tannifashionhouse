@@ -4,7 +4,9 @@ import {
   Search, Heart, ShoppingCart, Menu, X, Package,
   Shirt, Sparkles, ShoppingBasket, Tag, ChevronRight,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import logo from "@/assets/logo.jpeg";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -131,10 +133,9 @@ export function Header() {
             {/* Logo — centered on mobile, left on desktop */}
             <Link
               href="/"
-              className="absolute left-1/2 flex shrink-0 -translate-x-1/2 items-center gap-1.5 md:static md:mr-4 md:translate-x-0 lg:mr-6"
+              className="absolute left-1/2 flex shrink-0 -translate-x-1/2 items-center md:static md:mr-4 md:translate-x-0 lg:mr-6"
             >
-              <span className="text-xl font-bold tracking-tight text-accent lg:text-2xl">Tanni</span>
-              <span className="text-xl font-bold tracking-tight lg:text-2xl">Fashion House</span>
+              <Image src={logo} alt="Tanni Fashion House" priority className="size-11 rounded-xl object-cover lg:size-13" />
             </Link>
 
             {/* Desktop search */}
@@ -214,9 +215,8 @@ export function Header() {
 
             {/* Brand header */}
             <div className="flex items-center justify-between px-5 py-4 bg-black text-white shrink-0">
-              <Link href="/" onClick={() => setMenu(false)} className="flex items-baseline gap-1.5">
-                <span className="text-lg font-semibold tracking-tight">Tanni</span>
-                <span className="text-lg font-semibold tracking-tight text-accent">Fashion House</span>
+              <Link href="/" onClick={() => setMenu(false)} className="flex items-center">
+                <Image src={logo} alt="Tanni Fashion House" className="size-10 rounded-lg object-cover" />
               </Link>
               <button
                 onClick={() => setMenu(false)}
