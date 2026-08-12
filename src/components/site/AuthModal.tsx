@@ -24,6 +24,7 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
   // Signup state
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [spw, setSpw] = useState("");
   const [showSpw, setShowSpw] = useState(false);
 
@@ -31,19 +32,19 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
 
   const resetForms = () => {
     setIdentifier(""); setPw(""); setShowPw(false); setRemember(false);
-    setName(""); setPhone(""); setSpw(""); setShowSpw(false);
+    setName(""); setPhone(""); setEmail(""); setSpw(""); setShowSpw(false);
   };
 
   const close = () => { resetForms(); onClose(); };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !pw) { toast.error("Enter your phone number and password"); return; }
+    if (!identifier || !pw) { toast.error("Enter your phone number or email and password"); return; }
     setLoading(true);
     try {
       const res = await signIn("credentials", { phone: identifier, password: pw, redirect: false });
       if (res?.error) {
-        toast.error("Invalid phone number or password");
+        toast.error("Invalid phone/email or password");
         return;
       }
       login({ name: identifier, phone: identifier });
@@ -62,7 +63,7 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, password: spw }),
+        body: JSON.stringify({ name, phone, email: email.trim() || undefined, password: spw }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -134,12 +135,12 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
             <form onSubmit={handleLogin} className="space-y-3">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Phone number <span className="text-red-500">*</span>
+                  Phone number or email <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="Phone number"
+                  placeholder="Phone number or email"
                   className="w-full h-12 px-4 rounded-2xl border bg-background text-sm outline-none focus:border-foreground transition"
                 />
               </div>
@@ -208,6 +209,16 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone number"
+                  className="w-full h-12 px-4 rounded-2xl border bg-background text-sm outline-none focus:border-foreground transition"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Email address</label>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  placeholder="Email address (optional)"
                   className="w-full h-12 px-4 rounded-2xl border bg-background text-sm outline-none focus:border-foreground transition"
                 />
               </div>

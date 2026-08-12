@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/banners":   "Hero Slider",
   "/admin/promos":    "Promo Banners",
   "/admin/homepage":  "Homepage Config",
+  "/admin/settings":  "Settings",
 };
 
 function AdminShell({ children }: { children: React.ReactNode }) {

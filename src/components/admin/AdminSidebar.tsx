@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, X,
-  BarChart2, LogOut, Layers, Image, Home, Ruler, Palette, Store,
+  BarChart2, LogOut, Layers, Image, Home, Ruler, Palette, Store, Settings,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -108,6 +108,18 @@ export function AdminSidebar({ open, onClose }: Props) {
       {/* Footer */}
       <div className="border-t border-white/10 p-3 space-y-1 shrink-0">
         <Link
+          href="/admin/settings"
+          onClick={onClose}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            pathname === "/admin/settings"
+              ? "bg-[#ef4444] text-white shadow-lg shadow-red-500/20"
+              : "text-white/60 hover:text-white hover:bg-white/10"
+          }`}
+        >
+          <Settings className="size-4 shrink-0" strokeWidth={pathname === "/admin/settings" ? 2.5 : 2} />
+          Settings
+        </Link>
+        <Link
           href="/"
           target="_blank"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/10 transition"
@@ -122,7 +134,11 @@ export function AdminSidebar({ open, onClose }: Props) {
           <LogOut className="size-4" strokeWidth={2} />
           Logout
         </button>
-        <div className="flex items-center gap-3 px-3 py-2.5 mt-1">
+        <Link
+          href="/admin/settings"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2.5 mt-1 rounded-xl hover:bg-white/10 transition"
+        >
           <div className="size-8 rounded-full bg-[#ef4444] flex items-center justify-center text-white text-xs font-bold shrink-0">
             A
           </div>
@@ -130,7 +146,7 @@ export function AdminSidebar({ open, onClose }: Props) {
             <p className="text-sm font-medium text-white truncate">{session?.user?.name ?? "Admin User"}</p>
             <p className="text-xs text-white/40 truncate">{session?.user?.phone ?? ""}</p>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
