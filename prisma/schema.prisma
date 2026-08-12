@@ -1,0 +1,374 @@
+// Prisma schema for SHOP.BD
+// Database: PostgreSQL (Neon)
+// All prices in Bangladeshi Taka (integer, no decimals needed)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PLACED
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OfferType {
+  PERCENT
+  FIXED
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?  @unique
+  // password is null for OAuth / guest-registered users
+  password  String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  reviews   Review[]
+  addresses Address[]
+  cart      CartItem[]
+  wishlist  Wishlist[]
+
+  @@index([phone])
+  @@index([email])
+}
+
+// ─── Category ─────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  parentId  String?
+  image     String?
+  status    Status   @default(ACTIVE)
+  createdAt DateTime @default(now())
+
+  parent   Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children Category[] @relation("SubCategories")
+  products Product[]
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+// ─── Brand ────────────────────────────────────────────────────────────────────
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  image       String?
+  description String?
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+
+  products Product[]
+
+  @@index([slug])
+}
+
+// ─── Size ─────────────────────────────────────────────────────────────────────
+
+model Size {
+  id     String @id @default(cuid())
+  name   String @unique
+  type   String // clothing | footwear | general
+  status Status @default(ACTIVE)
+}
+
+// ─── Color ────────────────────────────────────────────────────────────────────
+
+model Color {
+  id     String @id @default(cuid())
+  name   String
+  hex    String @unique
+  status Status @default(ACTIVE)
+}
+
+// ─── Product ──────────────────────────────────────────────────────────────────
+
+model Product {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String?
+  price       Int           // in Taka
+  oldPrice    Int?
+  stock       Int           @default(0)
+  images      String[]      // ordered array of URLs
+  colorImages String[]
+  colors      String[]      // hex values matching colorImages order
+  sizes       String[]
+  material    String?
+  tags        String[]
+  badgeLabel  String?
+  badgeTone   String?       // new | sale | trending
+  status      ProductStatus @default(ACTIVE)
+  featured    Boolean       @default(false)
+  trending    Boolean       @default(false)
+  metaTitle   String?
+  metaDesc    String?
+  categoryId  String?
+  brandId     String?
+  subcategory String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  category   Category?        @relation(fields: [categoryId], references: [id])
+  brand      Brand?           @relation(fields: [brandId], references: [id])
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([status])
+  @@index([featured])
+  @@index([trending])
+}
+
+// ─── ProductVariant ───────────────────────────────────────────────────────────
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  size      String
+  color     String
+  price     Int
+  stock     Int     @default(0)
+  sku       String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// ─── Order ────────────────────────────────────────────────────────────────────
+// userId is nullable — guest orders have no account
+
+model Order {
+  id            String        @id // BD-2024-XXXXX
+  userId        String?
+  name          String
+  phone         String
+  email         String?
+  address       String
+  district      String
+  division      String
+  notes         String?
+  subtotal      Int
+  shippingCost  Int           @default(80)
+  discount      Int           @default(0)
+  total         Int
+  payment       String        // cod | bkash | nagad | card
+  paymentStatus PaymentStatus @default(PENDING)
+  status        OrderStatus   @default(PLACED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user  User?       @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  // Guests track their order by id + phone — index both
+  @@index([userId])
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── OrderItem ────────────────────────────────────────────────────────────────
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  qty       Int
+  size      String?
+  color     String?
+  price     Int     // price snapshot at order time — never changes
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ─── Review ───────────────────────────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String?
+  guestName String?  // if reviewer is not logged in
+  rating    Int      // 1–5
+  text      String
+  images    String[] // up to 3 URLs
+  verified  Boolean  @default(false) // true when userId has an order with productId
+  createdAt DateTime @default(now())
+
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?         @relation(fields: [userId], references: [id])
+  replies ReviewReply[]
+
+  @@index([productId])
+  @@index([userId])
+}
+
+// ─── ReviewReply ──────────────────────────────────────────────────────────────
+
+model ReviewReply {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String?
+  userName  String
+  text      String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+}
+
+// ─── Address ──────────────────────────────────────────────────────────────────
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  label     String  // Home | Office | Other
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  district  String
+  isDefault Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Cart (server-side for logged-in users) ───────────────────────────────────
+// Guests use localStorage; on login the client merges localStorage → DB
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  productId String
+  qty       Int     @default(1)
+  size      String?
+  color     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, productId])
+}
+
+// ─── Wishlist ─────────────────────────────────────────────────────────────────
+
+model Wishlist {
+  id        String @id @default(cuid())
+  userId    String
+  productId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+// ─── Offer / Coupon ───────────────────────────────────────────────────────────
+
+model Offer {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  type       OfferType
+  value      Int       // percent (e.g. 10) or fixed amount in Taka
+  minOrder   Int       @default(0)
+  maxUses    Int       @default(0)  // 0 = unlimited
+  usedCount  Int       @default(0)
+  expiryDate DateTime
+  status     Status    @default(ACTIVE)
+  createdAt  DateTime  @default(now())
+
+  @@index([code])
+  @@index([status])
+}
+
+// ─── HeroSlide ────────────────────────────────────────────────────────────────
+
+model HeroSlide {
+  id       String  @id @default(cuid())
+  badge    String
+  title    String
+  subtitle String
+  cta      String
+  slug     String  // category slug for the CTA link
+  image    String
+  gradient String
+  active   Boolean @default(true)
+  order    Int     @default(0)
+}
+
+// ─── PromoBanner ─────────────────────────────────────────────────────────────
+
+model PromoBanner {
+  id       String  @id @default(cuid())
+  eyebrow  String
+  title    String
+  subtitle String
+  image    String
+  href     String
+  bg       String
+  active   Boolean @default(true)
+  order    Int     @default(0)
+}
+
+// ─── SiteConfig (key-value for admin settings) ───────────────────────────────
+
+model SiteConfig {
+  key   String @id
+  value String // JSON string — parse on read
+}

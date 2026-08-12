@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Order Tracking | LuxeCommerce</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#4f46e5",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-on-surface": "#f3effc",
+                        "surface-variant": "#e4e1ee",
+                        "secondary": "#58579b",
+                        "on-primary-container": "#dad7ff",
+                        "on-secondary-fixed": "#140f54",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#eae6f4",
+                        "surface-container": "#f0ecf9",
+                        "surface-container-low": "#f5f2ff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ffd2be",
+                        "on-secondary-container": "#454386",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "primary-fixed": "#e2dfff",
+                        "surface-container-highest": "#e4e1ee",
+                        "surface-tint": "#4d44e3",
+                        "outline": "#777587",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-bright": "#fcf8ff",
+                        "secondary-fixed": "#e2dfff",
+                        "on-error-container": "#93000a",
+                        "surface": "#fcf8ff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "secondary-fixed-dim": "#c3c0ff",
+                        "primary": "#3525cd",
+                        "on-surface": "#1b1b24",
+                        "inverse-primary": "#c3c0ff",
+                        "outline-variant": "#c7c4d8",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#a44100",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#302f39",
+                        "on-primary": "#ffffff",
+                        "on-background": "#1b1b24",
+                        "on-primary-fixed": "#0f0069",
+                        "on-secondary-fixed-variant": "#413f82",
+                        "background": "#fcf8ff",
+                        "surface-dim": "#dcd8e5",
+                        "tertiary": "#7e3000",
+                        "secondary-container": "#b6b4ff",
+                        "on-surface-variant": "#464555"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "display": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-headline {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .step-active .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background min-h-screen pb-24">
+    <!-- TopNavBar -->
+    <header class="bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none docked full-width top-0 sticky z-50">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="font-headline font-extrabold text-primary dark:text-inverse-primary text-xl">LuxeCommerce</div>
+            <nav class="hidden md:flex gap-8 items-center">
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors font-label text-label-md"
+                    href="#">Home</a>
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors font-label text-label-md"
+                    href="#">Shop</a>
+                <a class="text-primary dark:text-inverse-primary font-bold border-b-2 border-primary font-label text-label-md"
+                    href="#">Orders</a>
+                <a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors font-label text-label-md"
+                    href="#">Wishlist</a>
+            </nav>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">shopping_bag</span>
+                </button>
+                <button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">person</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 md:px-6 mt-12 mb-16">
+        <!-- Search Hero Section -->
+        <div class="flex flex-col items-center text-center max-w-3xl mx-auto mb-16">
+            <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-primary text-3xl">package_2</span>
+            </div>
+            <h1 class="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-4 tracking-tight">Order
+                Tracking</h1>
+            <p class="text-on-surface-variant text-lg mb-10 leading-relaxed">Enter your order ID to see the current
+                status and detailed tracking information for your shipment.</p>
+            <div class="w-full relative group">
+                <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-outline">search</span>
+                </div>
+                <input
+                    class="w-full bg-surface-container-lowest border border-outline-variant h-16 pl-14 pr-44 rounded-full focus:ring-2 focus:ring-primary focus:border-primary transition-all text-lg font-body outline-none shadow-sm"
+                    placeholder="Enter your order ID" type="text" />
+                <button
+                    class="absolute right-2 top-2 bottom-2 bg-primary text-on-primary px-8 rounded-full font-headline font-bold hover:bg-primary-container transition-all flex items-center gap-2 active:scale-95">
+                    <span class="material-symbols-outlined text-xl">track_changes</span>
+                    Track Order
+                </button>
+            </div>
+            <button
+                class="mt-8 flex items-center gap-2 text-primary font-semibold hover:bg-primary-container/10 px-6 py-2 rounded-full transition-all">
+                <span class="material-symbols-outlined text-xl">visibility</span>
+                Demo Order
+            </button>
+        </div>
+        <!-- Order Summary Card -->
+        <div class="bg-surface-container-low rounded-lg p-8 mb-12 shadow-sm">
+            <div
+                class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-outline-variant pb-8">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-14 h-14 bg-primary-container/10 text-primary rounded-xl flex items-center justify-center">
+                        <span class="material-symbols-outlined text-3xl">local_shipping</span>
+                    </div>
+                    <div>
+                        <p class="text-on-surface-variant text-sm font-medium">Order Status</p>
+                        <h2 class="text-2xl font-headline font-bold text-on-surface">Delivering</h2>
+                    </div>
+                </div>
+                <div
+                    class="flex items-center gap-2 bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-bold">
+                    <span class="material-symbols-outlined text-xl">local_shipping</span>
+                    Delivering
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <p class="text-outline uppercase text-xs font-bold tracking-widest mb-1">Order ID</p>
+                    <p class="text-on-surface font-headline font-bold text-lg">#23456789</p>
+                </div>
+                <div>
+                    <p class="text-outline uppercase text-xs font-bold tracking-widest mb-1">Order Date</p>
+                    <p class="text-on-surface font-headline font-bold text-lg">08 May 2026</p>
+                </div>
+                <div>
+                    <p class="text-outline uppercase text-xs font-bold tracking-widest mb-1">Total Amount</p>
+                    <p class="text-on-surface font-headline font-bold text-lg">$468.56</p>
+                </div>
+                <div>
+                    <p class="text-outline uppercase text-xs font-bold tracking-widest mb-1">Payment Status</p>
+                    <div class="flex items-center gap-2 text-[#10B981] font-bold text-lg">
+                        <span class="material-symbols-outlined text-xl"
+                            style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Paid
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <!-- Timeline Section -->
+            <div
+                class="lg:col-span-1 bg-surface-container-lowest border border-outline-variant rounded-lg p-8 shadow-sm">
+                <h3 class="text-xl font-headline font-bold mb-8">Timeline</h3>
+                <div class="flex flex-col gap-0">
+                    <!-- Step 1 -->
+                    <div class="flex gap-4 min-h-[80px]">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#10B981] text-white flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">check</span>
+                            </div>
+                            <div class="w-1 h-full bg-[#10B981] -my-1"></div>
+                        </div>
+                        <div class="pb-8">
+                            <h4 class="font-bold text-on-surface">Pending</h4>
+                            <p class="text-on-surface-variant text-sm">08 May 2026 at 9:51 AM</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex gap-4 min-h-[80px]">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#10B981] text-white flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">check</span>
+                            </div>
+                            <div class="w-1 h-full bg-[#10B981] -my-1"></div>
+                        </div>
+                        <div class="pb-8">
+                            <h4 class="font-bold text-on-surface">Address Confirmed</h4>
+                            <p class="text-on-surface-variant text-sm">08 May 2026 at 10:06 AM</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex gap-4 min-h-[80px]">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#10B981] text-white flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">check</span>
+                            </div>
+                            <div class="w-1 h-full bg-[#10B981] -my-1"></div>
+                        </div>
+                        <div class="pb-8">
+                            <h4 class="font-bold text-on-surface">Confirmed</h4>
+                            <p class="text-on-surface-variant text-sm">08 May 2026 at 10:21 AM</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex gap-4 min-h-[80px]">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#10B981] text-white flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">check</span>
+                            </div>
+                            <div class="w-1 h-full bg-[#10B981] -my-1"></div>
+                        </div>
+                        <div class="pb-8">
+                            <h4 class="font-bold text-on-surface">Packed</h4>
+                            <p class="text-on-surface-variant text-sm">09 May 2026 at 9:51 AM</p>
+                        </div>
+                    </div>
+                    <!-- Step 5: Active -->
+                    <div class="flex gap-4 min-h-[80px] step-active">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-12 h-12 -ml-1 rounded-full bg-primary text-on-primary flex items-center justify-center z-10 shadow-lg shadow-primary/20 relative">
+                                <span class="material-symbols-outlined text-2xl">local_shipping</span>
+                                <span
+                                    class="absolute -right-1 -top-1 w-3 h-3 bg-primary-container border-2 border-white rounded-full animate-pulse"></span>
+                            </div>
+                            <div class="w-1 h-full bg-outline-variant -my-1 opacity-40"></div>
+                        </div>
+                        <div class="pb-8 pl-1">
+                            <h4 class="font-bold text-on-surface text-lg">Delivering</h4>
+                            <p class="text-on-surface-variant text-sm">10 May 2026 at 9:51 AM</p>
+                        </div>
+                    </div>
+                    <!-- Step 6: Future -->
+                    <div class="flex gap-4 min-h-[80px] opacity-40">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-surface-container-high text-outline flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">package</span>
+                            </div>
+                            <div class="w-1 h-full bg-outline-variant -my-1"></div>
+                        </div>
+                        <div class="pb-8">
+                            <h4 class="font-bold">Delivered</h4>
+                            <p class="text-sm">Estimated 11 May 2026</p>
+                        </div>
+                    </div>
+                    <!-- Step 7: Future -->
+                    <div class="flex gap-4 min-h-[40px] opacity-40">
+                        <div class="flex flex-col items-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-surface-container-high text-outline flex items-center justify-center z-10">
+                                <span class="material-symbols-outlined text-xl">task_alt</span>
+                            </div>
+                        </div>
+                        <div class="">
+                            <h4 class="font-bold">Completed</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Main Items Column -->
+            <div class="lg:col-span-2 flex flex-col gap-8">
+                <!-- Items List -->
+                <div
+                    class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+                    <div class="px-8 py-6 border-b border-outline-variant flex justify-between items-center">
+                        <h3 class="text-xl font-headline font-bold">Items (3)</h3>
+                    </div>
+                    <div class="divide-y divide-outline-variant">
+                        <!-- Item 1 -->
+                        <div class="p-8 flex items-center gap-6 hover:bg-surface transition-colors">
+                            <div class="w-24 h-24 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+                                <img class="w-full h-full object-cover"
+                                    data-alt="A high-end dietary supplement bottle with vibrant orange branding, placed on a clean white reflective surface. The lighting is bright and airy, suggesting a premium wellness product. The overall aesthetic is minimalist and health-focused with a soft, clean shadow."
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVo5tc7nmSmtwfICtX1dh9q5YiQFu8AidfXPEXVd28nohrZcgKUbsdQZhhniSdXzL1Uj5ILfeEnnkmq1wtKx5DP2p0HZxcEHPPlEL9Svgkv91dtWUrlnamKeUXTN5dPCEg6iTyWCUONbw2dzW542A2UaGBuY9_36DpcyBo8r6mVQ3_y7OnDerWHjaMdKViUeQclZFhavA--RxSWJFTR1kXgxNWsv6JY8VO0cRZ4xraZP0TqXIAtFkYoCXy2JQx5U1pN0NckvFyxgo7" />
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-on-surface text-lg">VitaLife Omega-3 Softgels - Heart Support
+                                </h4>
+                                <p class="text-on-surface-variant">Qty: 1</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-headline font-extrabold text-xl text-on-surface">$79.99</p>
+                            </div>
+                        </div>
+                        <!-- Item 2 -->
+                        <div class="p-8 flex items-center gap-6 hover:bg-surface transition-colors">
+                            <div class="w-24 h-24 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+                                <img class="w-full h-full object-cover"
+                                    data-alt="Professional health supplement packaging in a deep green container, signifying high strength and natural ingredients. The bottle sits in a minimalist studio environment with high-key lighting that emphasizes its premium quality. Clear, crisp textures and a modern light-mode background."
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4gpcFmvMP3hEIK96LNV726IzaF4dMigipXwoDb8cvJR-PwTqDSNK8uOni5AdG--Pv6PvcT38OA5uJtoB8oXqWUlMDV2_otuzi5d7Iel3zoiWMHsm_pBJpuxLscb3NyPe3qX0EygSi49r3XUGLzcJGuodzKTfBMejPzhlDfSNHGotO9XJF_2F5s87WjH2OLzJcHamUUh_I-P-ZzL_en6lt4MbvLRqP6p44flQD2gr0U-e2IqKu6-9mXNwpdJohIukvi2i3nOS7FO2r" />
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-on-surface text-lg">VitaLife Omega-3 Softgels - Max Strength
+                                </h4>
+                                <p class="text-on-surface-variant">Qty: 1</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-headline font-extrabold text-xl text-on-surface">$299.99</p>
+                            </div>
+                        </div>
+                        <!-- Item 3 -->
+                        <div class="p-8 flex items-center gap-6 hover:bg-surface transition-colors">
+                            <div class="w-24 h-24 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+                                <img class="w-full h-full object-cover"
+                                    data-alt="A luxurious health cream tube in soft pastel pink packaging, styled elegantly beside a blooming lotus flower. The scene is illuminated by soft, diffuse natural light, creating a serene and premium apothecary feel. High-quality textures and a bright, minimalist composition."
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKk-P_0psgi3kYkfZXON_qoIvnUPqFs6ih_mMykPkhQ7Cag2dtIg8vVZ4YDSxHx3STO0Ugnd8M1Kmzp3ylQAjhihyMeui70hz6ySswH3TeNOAYNZ0S78VrbXM656BQYncY5KCwnJYczW7tUrd-0lrRc5IAQEi-oYdZjUbQf64i_GlqvL7lLPyEkwyaSS8UVQxPgSg5bw3Ip9PJR2TYf0FNWKBfP5FBbl730wTK2Ctd8S3Rg6XvuIwPI_jcCX0re4M6ka065r2hLbi1" />
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-on-surface text-lg">Premium Health Supplement</h4>
+                                <p class="text-on-surface-variant">Qty: 2</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-headline font-extrabold text-xl text-on-surface">$39.98</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Shipping Address Card -->
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 shadow-sm">
+                    <h3 class="text-xl font-headline font-bold mb-6">Shipping Address</h3>
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="flex-grow">
+                            <div class="flex items-start gap-4">
+                                <div
+                                    class="w-12 h-12 bg-surface-container text-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="material-symbols-outlined">location_on</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface text-lg mb-1">John Doe</h4>
+                                    <p class="text-on-surface-variant leading-relaxed mb-4">
+                                        123 Main Street, San Francisco,<br />
+                                        California, 94102, United States
+                                    </p>
+                                    <div class="flex items-center gap-2 text-primary font-semibold">
+                                        <span class="material-symbols-outlined text-xl">call</span>
+                                        +1 (555) 123-4567
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-64 h-40 rounded-lg overflow-hidden border border-outline-variant">
+                            <img class="w-full h-full object-cover"
+                                data-alt="A stylized, minimalist map illustration of a city grid with clean, light-colored streets and a single prominent location marker in deep indigo. The map uses a sophisticated color palette of light grays and whites, matching the modern premium UI aesthetic. Bright, uniform lighting with no harsh shadows."
+                                data-location="San Francisco"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAks4acAYrHQo_dgPYXrMOue9LDNO-gIc90t65iIX8cX4CSAoFenBpSGOr9UgR1x6L79GSLHas7TF9VwljdGi7qPF10bACPXPEucSG3WHrnuQyzmk8VzqDIulZmMHS_MWrTBVTQQYZC_wqmUMKPQdQk0tp7qzhJDzIFkgWhkpoMZmy0ChTJPGFo0o2GnihYa_UHMww44BUc2IHVbskohS3obr72u7fI_rB5zuAMdg0_Lec0t75jr71T6FwBHOA_fy1pNcikFTxRh0-C" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar (Mobile Only) -->
+    <nav
+        class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-surface-container-lowest dark:bg-inverse-surface shadow-md border-t border-outline-variant dark:border-none rounded-t-xl">
+        <a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all px-3 py-1"
+            href="#">
+            <span class="material-symbols-outlined">home</span>
+            <span class="font-label text-label-sm">Home</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all px-3 py-1"
+            href="#">
+            <span class="material-symbols-outlined">search_insights</span>
+            <span class="font-label text-label-sm">Shop</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-container/10 rounded-xl px-3 py-1"
+            href="#">
+            <span class="material-symbols-outlined">package_2</span>
+            <span class="font-label text-label-sm">Orders</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all px-3 py-1"
+            href="#">
+            <span class="material-symbols-outlined">favorite</span>
+            <span class="font-label text-label-sm">Wishlist</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high transition-all px-3 py-1"
+            href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-label text-label-sm">Account</span>
+        </a>
+    </nav>
+</body>
+
+</html>

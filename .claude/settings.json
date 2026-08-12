@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls *.png)",
+      "Bash(ls *.jpg)",
+      "PowerShell(Remove-Item -Recurse -Force .next -Confirm:$false)",
+      "PowerShell(\"cleaned\")",
+      "PowerShell($conns = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique; foreach \\($p in $pids\\) { $proc = Get-Process -Id $p -ErrorAction SilentlyContinue; \"$p $\\($proc.ProcessName\\)\"; Stop-Process -Id $p -Force -Confirm:$false })",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(netstat -ano)",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_resize",
+      "Bash(git commit -m 'Add shimmer loading system, product gallery carousel, and hydration fixes *)",
+      "Bash(npx eslint *)",
+      "mcp__playwright__browser_file_upload"
+    ]
+  }
+}

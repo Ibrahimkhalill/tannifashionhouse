@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>LuxeCheckout - Secure Checkout</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@700;800&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#c3c0ff",
+            "on-secondary": "#ffffff",
+            "on-surface": "#1b1b24",
+            "on-secondary-fixed-variant": "#413f82",
+            "primary-fixed-dim": "#c3c0ff",
+            "on-error-container": "#93000a",
+            "on-primary-fixed-variant": "#3323cc",
+            "on-primary-container": "#dad7ff",
+            "on-secondary-container": "#454386",
+            "outline-variant": "#c7c4d8",
+            "on-tertiary-container": "#ffd2be",
+            "tertiary-fixed-dim": "#ffb695",
+            "error-container": "#ffdad6",
+            "error": "#ba1a1a",
+            "background": "#fcf8ff",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed-variant": "#7b2f00",
+            "surface-container-lowest": "#ffffff",
+            "tertiary": "#7e3000",
+            "surface": "#fcf8ff",
+            "on-primary": "#ffffff",
+            "surface-variant": "#e4e1ee",
+            "on-background": "#1b1b24",
+            "on-primary-fixed": "#0f0069",
+            "tertiary-container": "#a44100",
+            "inverse-on-surface": "#f3effc",
+            "secondary-container": "#b6b4ff",
+            "primary-container": "#4f46e5",
+            "surface-dim": "#dcd8e5",
+            "inverse-surface": "#302f39",
+            "surface-container": "#f0ecf9",
+            "tertiary-fixed": "#ffdbcc",
+            "inverse-primary": "#c3c0ff",
+            "outline": "#777587",
+            "surface-container-low": "#f5f2ff",
+            "surface-bright": "#fcf8ff",
+            "on-tertiary": "#ffffff",
+            "secondary": "#58579b",
+            "secondary-fixed": "#e2dfff",
+            "on-secondary-fixed": "#140f54",
+            "primary": "#3525cd",
+            "primary-fixed": "#e2dfff",
+            "surface-container-high": "#eae6f4",
+            "surface-container-highest": "#e4e1ee",
+            "on-surface-variant": "#464555",
+            "on-tertiary-fixed": "#351000",
+            "surface-tint": "#4d44e3"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter_desktop": "24px",
+            "stack_sm": "8px",
+            "base": "8px",
+            "gutter_mobile": "16px",
+            "section_padding": "64px",
+            "container_max_width": "1280px",
+            "stack_md": "16px",
+            "stack_lg": "24px",
+            "touch_target_min": "44px"
+          },
+          "fontFamily": {
+            "headline-lg": ["Manrope"],
+            "label-md": ["Inter"],
+            "headline-md": ["Manrope"],
+            "label-sm": ["Inter"],
+            "display-lg": ["Manrope"],
+            "headline-lg-mobile": ["Manrope"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+            "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+            "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "500" }],
+            "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "700" }],
+            "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+            "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background-color: #fcf8ff;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #3525cd !important;
+      box-shadow: 0 0 0 1px #3525cd;
+    }
+
+    /* Simple accordion state for mobile */
+    details>summary {
+      list-style: none;
+    }
+
+    details>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details[open] summary .expand-icon {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+
+<body class="text-on-surface selection:bg-primary-container selection:text-on-primary-container pb-32 md:pb-0">
+
+  <main class="max-w-container_max_width mx-auto px-gutter_mobile md:px-gutter_desktop py-6 md:py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-stack_lg items-start">
+      <!-- Order Summary (Visible on top for mobile as a collapsible preview, or sticky on desktop) -->
+      <aside class="lg:col-span-5 lg:order-last lg:sticky lg:top-24 flex flex-col gap-stack_lg">
+        <details class="bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant lg:hidden"
+          open="">
+          <summary class="flex items-center justify-between p-4 cursor-pointer">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary" data-icon="shopping_cart">shopping_cart</span>
+              <span class="text-label-md font-bold">Show order summary</span>
+              <span class="material-symbols-outlined expand-icon transition-transform text-on-surface-variant"
+                data-icon="expand_more">expand_more</span>
+            </div>
+            <span class="text-headline-md font-bold text-primary">৳4,330</span>
+          </summary>
+          <div class="px-4 pb-6 flex flex-col gap-4 border-t border-outline-variant pt-4">
+            <!-- Product List -->
+            <div class="flex gap-4">
+              <div class="w-16 h-20 bg-surface-container-low rounded-md overflow-hidden flex-shrink-0">
+                <img alt="Premium Jacket" class="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7wteJgSehV03pH-MjTM66WEG4X9WyvXu4BiSNN7RRsXK7y6pWc1-rfIt5sYxExXBjRZxb1CMPaWXRFi1Pr1R9yd9atSqXo29pnicZURDWotvE1A65-vv6bi9OaEzOwFKYl--aACgljRDcxe2vhmAiZGKZeA5nojKROicGNbc311pexg4Tf4k1zwJP5EfPQPzH93HyWHPEzKbhPs2B8fpYi6SbG2_8_3zDfaFEtjhHYtyIsMgSkXipcqulysN4Fi_bv5XQx0wuMa1P" />
+              </div>
+              <div class="flex flex-col justify-between flex-grow">
+                <div>
+                  <h3 class="text-label-md font-label-md text-on-surface">Luxe Technical Overcoat</h3>
+                  <p class="text-label-sm font-label-sm text-on-surface-variant">Sky Blue | XL</p>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div
+                    class="flex items-center border border-outline rounded-full px-2 py-0.5 gap-3 scale-90 origin-left">
+                    <button
+                      class="w-5 h-5 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors"><span
+                        class="material-symbols-outlined text-[14px]" data-icon="remove">remove</span></button>
+                    <span class="text-label-sm font-bold">1</span>
+                    <button
+                      class="w-5 h-5 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors"><span
+                        class="material-symbols-outlined text-[14px]" data-icon="add">add</span></button>
+                  </div>
+                  <span class="text-label-md font-bold">৳4,250</span>
+                </div>
+              </div>
+            </div>
+            <!-- Coupon -->
+            <div class="flex gap-2 pt-2">
+              <input class="flex-grow h-[44px] px-3 rounded-md border border-outline bg-surface-bright text-label-md"
+                placeholder="Promo code" type="text" />
+              <button class="h-[44px] px-4 bg-secondary text-on-secondary rounded-md font-label-md">Apply</button>
+            </div>
+            <!-- Pricing Table -->
+            <div class="flex flex-col gap-2 pt-2 text-label-md text-on-surface-variant">
+              <div class="flex justify-between"><span>Subtotal</span><span>৳4,250</span></div>
+              <div class="flex justify-between"><span>Shipping</span><span>৳80</span></div>
+              <div class="flex justify-between text-error"><span>Discount</span><span>-৳0</span></div>
+            </div>
+          </div>
+        </details>
+        <!-- Desktop Order Summary -->
+        <div class="hidden lg:block bg-surface-container-lowest rounded-lg p-6 shadow-md border border-outline-variant">
+          <h2 class="text-headline-md font-headline-md mb-6">Order Summary</h2>
+          <div class="flex flex-col gap-stack_md pb-6 border-b border-outline-variant">
+            <div class="flex gap-4">
+              <div class="w-20 h-24 bg-surface-container-low rounded-md overflow-hidden flex-shrink-0">
+                <img alt="Premium Jacket" class="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7wteJgSehV03pH-MjTM66WEG4X9WyvXu4BiSNN7RRsXK7y6pWc1-rfIt5sYxExXBjRZxb1CMPaWXRFi1Pr1R9yd9atSqXo29pnicZURDWotvE1A65-vv6bi9OaEzOwFKYl--aACgljRDcxe2vhmAiZGKZeA5nojKROicGNbc311pexg4Tf4k1zwJP5EfPQPzH93HyWHPEzKbhPs2B8fpYi6SbG2_8_3zDfaFEtjhHYtyIsMgSkXipcqulysN4Fi_bv5XQx0wuMa1P" />
+              </div>
+              <div class="flex flex-col justify-between py-1 w-full">
+                <div>
+                  <h3 class="text-label-md font-label-md text-on-surface">Luxe Technical Overcoat</h3>
+                  <p class="text-label-sm font-label-sm text-on-surface-variant">Sky Blue | XL</p>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center border border-outline rounded-full px-2 py-1 gap-4">
+                    <button
+                      class="w-6 h-6 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors"><span
+                        class="material-symbols-outlined text-[16px]" data-icon="remove">remove</span></button>
+                    <span class="text-label-md font-label-md">1</span>
+                    <button
+                      class="w-6 h-6 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors"><span
+                        class="material-symbols-outlined text-[16px]" data-icon="add">add</span></button>
+                  </div>
+                  <span class="text-label-md font-headline-md">৳4,250</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="py-6 flex gap-2">
+            <input class="flex-grow h-[48px] px-4 rounded-md border border-outline bg-surface-bright text-label-md"
+              placeholder="Promo code" type="text" />
+            <button
+              class="h-[48px] px-6 bg-secondary text-on-secondary rounded-md font-label-md hover:bg-primary transition-all">Apply</button>
+          </div>
+          <div class="flex flex-col gap-3 pb-6 border-b border-outline-variant">
+            <div class="flex justify-between text-body-md text-on-surface-variant">
+              <span>Subtotal</span><span>৳4,250</span>
+            </div>
+            <div class="flex justify-between text-body-md text-on-surface-variant"><span>Shipping</span><span>৳80</span>
+            </div>
+            <div class="flex justify-between text-body-md text-error"><span>Discount</span><span>-৳0</span></div>
+            <div class="flex justify-between text-headline-md font-headline-md text-on-surface mt-2">
+              <span>Total</span><span>৳4,330</span>
+            </div>
+          </div>
+          <button
+            class="w-full h-[56px] mt-6 bg-primary text-on-primary rounded-md font-headline-md flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined" data-icon="lock" data-weight="fill">lock</span> Place Order
+          </button>
+        </div>
+        <!-- Trust Row & Ad (Hidden on small mobile if needed, but here kept for consistency) -->
+        <div class="flex flex-col gap-stack_md">
+          <div
+            class="bg-surface-container-lowest rounded-lg p-6 shadow-sm border border-outline-variant grid grid-cols-3 gap-2">
+            <div class="flex flex-col items-center text-center gap-1">
+              <span class="material-symbols-outlined text-primary text-[20px]"
+                data-icon="verified_user">verified_user</span>
+              <span class="text-[9px] font-label-sm uppercase tracking-wider text-on-surface-variant">Secure</span>
+            </div>
+            <div class="flex flex-col items-center text-center gap-1">
+              <span class="material-symbols-outlined text-primary text-[20px]"
+                data-icon="assignment_return">assignment_return</span>
+              <span class="text-[9px] font-label-sm uppercase tracking-wider text-on-surface-variant">7-Day
+                Return</span>
+            </div>
+            <div class="flex flex-col items-center text-center gap-1">
+              <span class="material-symbols-outlined text-primary text-[20px]"
+                data-icon="enhanced_encryption">enhanced_encryption</span>
+              <span class="text-[9px] font-label-sm uppercase tracking-wider text-on-surface-variant">Encrypted</span>
+            </div>
+          </div>
+          <div class="bg-primary-container text-on-primary-container p-4 rounded-lg flex items-center gap-3">
+            <span class="material-symbols-outlined text-[24px]" data-icon="support_agent">support_agent</span>
+            <div>
+              <h4 class="font-bold text-label-sm">Need assistance?</h4>
+              <p class="text-[11px] opacity-90">Concierge: +880 1999-000000</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <!-- Left Column: Form Sections -->
+      <div class="lg:col-span-7 flex flex-col gap-stack_md md:gap-stack_lg">
+        <!-- Section: Customer Information -->
+        <section class="bg-surface-container-lowest rounded-lg p-5 md:p-6 shadow-sm border border-outline-variant">
+          <div class="flex items-center gap-stack_sm mb-6">
+            <span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+            <h2 class="text-headline-md font-headline-md">Customer Information</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-stack_md">
+            <div class="md:col-span-2">
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">Full Name</label>
+              <input
+                class="w-full h-[48px] px-4 rounded-md border border-outline focus:border-primary bg-surface-bright text-body-md transition-all"
+                placeholder="e.g. Adnan Sami" type="text" />
+            </div>
+            <div>
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">Email</label>
+              <input
+                class="w-full h-[48px] px-4 rounded-md border border-outline focus:border-primary bg-surface-bright text-body-md transition-all"
+                placeholder="name@example.com" type="email" />
+            </div>
+            <div>
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">Phone Number</label>
+              <input
+                class="w-full h-[48px] px-4 rounded-md border border-outline focus:border-primary bg-surface-bright text-body-md transition-all"
+                placeholder="+880 1XXX-XXXXXX" type="tel" />
+            </div>
+          </div>
+        </section>
+        <!-- Section: Shipping Address -->
+        <section class="bg-surface-container-lowest rounded-lg p-5 md:p-6 shadow-sm border border-outline-variant">
+          <div class="flex items-center gap-stack_sm mb-6">
+            <span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+            <h2 class="text-headline-md font-headline-md">Shipping Address</h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-stack_md">
+            <div>
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">Country</label>
+              <select
+                class="w-full h-[48px] px-4 rounded-md border border-outline bg-surface-bright text-body-md appearance-none">
+                <option>Bangladesh</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">District</label>
+              <select
+                class="w-full h-[48px] px-4 rounded-md border border-outline bg-surface-bright text-body-md appearance-none">
+                <option>Dhaka</option>
+                <option>Chattogram</option>
+                <option>Sylhet</option>
+                <option>Rajshahi</option>
+                <option>Khulna</option>
+                <option>Barishal</option>
+                <option>Rangpur</option>
+                <option>Mymensingh</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">ZIP Code</label>
+              <input class="w-full h-[48px] px-4 rounded-md border border-outline bg-surface-bright text-body-md"
+                placeholder="1212" type="text" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-label-sm font-label-md text-on-surface-variant mb-1.5">Full Address</label>
+              <textarea class="w-full p-4 rounded-md border border-outline bg-surface-bright text-body-md resize-none"
+                placeholder="House no, Street name, Area" rows="3"></textarea>
+            </div>
+          </div>
+        </section>
+        <!-- Section: Delivery Method -->
+
+        <!-- Section: Payment Method -->
+        <section
+          class="bg-surface-container-lowest rounded-lg p-5 md:p-6 shadow-sm border border-outline-variant mb-4 lg:mb-0">
+          <div class="flex items-center gap-stack_sm mb-6">
+            <span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+            <h2 class="text-headline-md font-headline-md">Payment Method</h2>
+          </div>
+          <div class="flex flex-col gap-stack_sm">
+            <label
+              class="flex items-center p-4 border rounded-md cursor-pointer transition-all bg-surface-bright border-primary border-2">
+              <input checked="" class="w-5 h-5 text-primary focus:ring-primary" name="payment" type="radio" />
+              <div class="ml-4 flex items-center justify-between w-full">
+                <span class="text-label-md font-label-md">Cash on Delivery</span>
+                <span class="material-symbols-outlined text-on-surface-variant" data-icon="money">money</span>
+              </div>
+            </label>
+            <label
+              class="flex items-center p-4 border rounded-md cursor-pointer hover:border-primary transition-all bg-surface-bright border-outline">
+              <input class="w-5 h-5 text-primary focus:ring-primary" name="payment" type="radio" />
+              <div class="ml-4 flex items-center justify-between w-full">
+                <span class="text-label-md font-label-md">Credit/Debit Card</span>
+                <span class="material-symbols-outlined text-on-surface-variant"
+                  data-icon="credit_card">credit_card</span>
+              </div>
+            </label>
+            <label
+              class="flex items-center p-4 border rounded-md cursor-pointer hover:border-primary transition-all bg-surface-bright border-outline">
+              <input class="w-5 h-5 text-primary focus:ring-primary" name="payment" type="radio" />
+              <div class="ml-4 flex items-center justify-between w-full">
+                <span class="text-label-md font-label-md">Mobile Banking (bKash/Nagad)</span>
+                <span class="material-symbols-outlined text-on-surface-variant"
+                  data-icon="account_balance_wallet">account_balance_wallet</span>
+              </div>
+            </label>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <!-- Mobile Sticky Bottom Bar -->
+  <div
+    class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant p-4 z-50 shadow-[0_-8px_16px_rgba(0,0,0,0.08)]">
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex flex-col">
+        <span class="text-label-sm text-on-surface-variant">Total to pay</span>
+        <span class="text-headline-md font-bold text-on-surface">৳4,330</span>
+      </div>
+      <button
+        class="flex-grow h-[52px] bg-primary text-on-primary rounded-md font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
+        <span class="material-symbols-outlined text-[20px]" data-icon="lock" data-weight="fill">lock</span>
+        Place Order
+      </button>
+    </div>
+  </div>
+
+</body>
+
+</html>

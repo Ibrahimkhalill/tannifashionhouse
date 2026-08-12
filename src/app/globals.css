@@ -1,0 +1,355 @@
+@import "tailwindcss" source(none);
+@source "..";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  /* 16px — card / control radius baseline (maps to rounded-2xl scale) */
+  --radius: 1rem;
+
+  /* ── Typography scale (Amazon / Apple inspired, rem-based) ─────────────
+   * Step    px      Token        Usage
+   * 11px →  0.6875  --fs-2xs     micro meta, ratings count
+   * 12px →  0.75    --fs-xs      labels, badges, breadcrumb
+   * 13px →  0.8125  --fs-sm      small body, helper text
+   * 14px →  0.875   --fs-base    body, buttons, inputs, table cells, product title (mobile)
+   * 15px →  0.9375  --fs-md      emphasized body, comfortable desktop body
+   * 16px →  1       --fs-lg      product title (desktop), section subtitle
+   * 18px →  1.125   --fs-xl      price (desktop), total amount, large UI
+   * 20px →  1.25    --fs-2xl     section heading
+   * 24px →  1.5     --fs-3xl     page heading (max)
+   */
+  --fs-2xs:  0.6875rem;
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.8125rem;
+  --fs-base: 0.875rem;
+  --fs-md:   0.9375rem;
+  --fs-lg:   1rem;
+  --fs-xl:   1.125rem;
+  --fs-2xl:  1.25rem;
+  --fs-3xl:  1.5rem;
+
+  /* Line heights */
+  --lh-tight:   1.2;    /* big headings */
+  --lh-snug:    1.35;   /* medium headings, product titles */
+  --lh-normal:  1.5;    /* body */
+  --lh-relaxed: 1.6;    /* paragraphs, descriptions */
+
+  /* Tanni Fashion House — strict three color system: black / white / red accent */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.58 0.13 165);             /* emerald — Tanni Fashion House fashion accent */
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.62 0.24 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-inter), var(--font-sans);
+    font-size: var(--fs-base); /* 14px — body baseline (Amazon-style) */
+    line-height: var(--lh-normal);
+    letter-spacing: -0.005em;
+    width: 100%;
+    min-width: 0;
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      font-size: var(--fs-md); /* 15px desktop — comfortable but not heavy */
+    }
+  }
+
+  /* Headings inherit the tight line-height by default so we never need to override per-element. */
+  h1, h2, h3, h4 {
+    line-height: var(--lh-snug);
+    letter-spacing: -0.01em;
+  }
+
+  .font-bn {
+    font-family: var(--font-hind), "Noto Sans Bengali", sans-serif;
+  }
+}
+
+@theme inline {
+  --animate-marquee: marquee 30s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@theme inline {
+  --animate-fade-in: fade-in 0.5s ease-out both;
+  --animate-fade-up: fade-up 0.6s ease-out both;
+  --animate-scale-in: scale-in 0.3s ease-out both;
+  --animate-slide-down: slide-down 0.25s ease-out both;
+  --animate-slide-left: slide-left 0.28s ease-out both;
+  --animate-slide-right: slide-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-bounce-soft: bounce-soft 0.6s ease;
+}
+
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes scale-in { from { opacity: 0; transform: scale(.95) } to { opacity: 1; transform: scale(1) } }
+@keyframes slide-down { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes slide-left { from { opacity: 0; transform: translateX(-100%) } to { opacity: 1; transform: translateX(0) } }
+@keyframes slide-right { from { opacity: 0; transform: translateX(100%) } to { opacity: 1; transform: translateX(0) } }
+@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+@keyframes bounce-soft { 0%, 100% { transform: scale(1) } 30% { transform: scale(1.18) } 60% { transform: scale(0.94) } }
+@keyframes progress-bar { from { width: 0% } to { width: 100% } }
+
+/* ── Shimmer skeleton ─────────────────────────────────────────────
+   A diagonal light sweep over a muted base. Used by <Skeleton /> and
+   any element that needs a loading placeholder. */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: oklch(from var(--muted) l c h / 0.8);
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    oklch(from var(--background) l c h / 0.65) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after { animation: none; }
+}
+
+.hover-lift {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px -24px oklch(0 0 0 / 0.14);
+  border-color: oklch(0.88 0 0);
+}
+
+/* Tiny press feedback for buttons and tappable cards. */
+.press {
+  transition: transform 0.15s ease, opacity 0.18s ease, box-shadow 0.22s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Soft, premium card elevation utility. */
+.card-elevated {
+  box-shadow:
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 6px 18px -10px oklch(0 0 0 / 0.10);
+}
+.card-elevated-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-elevated-hover:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 1px 2px -1px oklch(0 0 0 / 0.06),
+    0 24px 44px -22px oklch(0 0 0 / 0.18);
+}
+
+/* Smoother input focus ring without harsh outline. */
+.input-soft {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.input-soft:focus-visible {
+  border-color: oklch(0 0 0 / 0.35);
+  box-shadow: 0 0 0 4px oklch(0 0 0 / 0.07);
+  outline: none;
+}
+
+/* Quantity stepper button micro-interaction. */
+.qty-btn {
+  transition: background-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
+}
+.qty-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+/* Mobile tap-highlight cleanup. */
+html, button, a, label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none }
+.no-scrollbar { scrollbar-width: none }
+
+.card-pill {
+  position: relative;
+  background-color: #fff;
+  border-radius: 15px 15px 0 0;
+}
+
+.card-pill:after {
+    content: "";
+    width: 18px;
+    height: 15px;
+    position: absolute;
+    right: -18px;
+    bottom: 4px;
+    background-image: url("../assets/shape-1.png");
+    background-repeat: no-repeat;
+    background-size: 100%;
+}
+
+.card-pill:before {
+    content: "";
+    width: 18px;
+    height: 15px;
+    position: absolute;
+    left: -16px;
+    bottom: -1px;
+     background-image: url("../assets/shape-1.png");
+    background-repeat: no-repeat;
+    background-size: 100%;
+    -webkit-transform: translateY(-50%) rotate(270deg);
+    transform: translateY(-50%) rotate(270deg);
+}
