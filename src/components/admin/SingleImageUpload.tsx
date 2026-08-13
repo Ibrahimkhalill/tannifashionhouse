@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Upload, X, ImagePlus, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { compressAndUpload } from "@/lib/image-upload";
+import { compressAndUpload, discardUpload } from "@/lib/image-upload";
 
 interface Props {
   value: string;
@@ -30,6 +30,7 @@ export function SingleImageUpload({ value, onChange, hint }: Props) {
     const t = toast.loading("Uploading…");
     try {
       const uploaded = await compressAndUpload(file);
+      discardUpload(value);   // drop the previous unsaved image being replaced
       onChange(uploaded);
       toast.dismiss(t); toast.success("Uploaded");
     } catch {
@@ -100,7 +101,7 @@ export function SingleImageUpload({ value, onChange, hint }: Props) {
       {value && (
         <div className="group relative inline-block">
           <img src={value} alt="Preview" className="h-24 w-auto max-w-full rounded-xl object-cover border border-slate-200 bg-slate-50" />
-          <button type="button" onClick={() => onChange("")}
+          <button type="button" onClick={() => { discardUpload(value); onChange(""); }}
             aria-label="Remove image"
             className="absolute -top-2 -right-2 size-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition">
             <X className="size-3.5" />

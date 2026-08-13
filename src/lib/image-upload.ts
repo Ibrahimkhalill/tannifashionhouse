@@ -9,9 +9,37 @@ import { uploadImage } from "@/lib/api-client";
 // Vercel's ~4.5 MB serverless body limit → "FUNCTION_PAYLOAD_TOO_LARGE". Uploading
 // each file to Cloudinary first means the save payload only carries short URLs,
 // and shrinking client-side keeps every upload well under the limit + loads faster.
+// URLs uploaded during THIS editing session that haven't been committed by a save
+// yet. If the user removes such an image (wrong photo → remove → re-upload), we can
+// safely delete it from Cloudinary so orphans don't pile up. Cleared on save so a
+// committed/saved image is never auto-deleted later.
+const sessionUploads = new Set<string>();
+
 export async function compressAndUpload(file: File, maxDim = 1600, quality = 0.82): Promise<string> {
   const prepared = await shrink(file, maxDim, quality).catch(() => file);
-  return uploadImage(prepared);
+  const url = await uploadImage(prepared);
+  sessionUploads.add(url);
+  return url;
+}
+
+// Delete an image from Cloudinary ONLY if it was uploaded this session and not yet
+// saved. Safe no-op for pre-existing/saved images and pasted URLs.
+export async function discardUpload(url?: string): Promise<void> {
+  if (!url || !sessionUploads.has(url)) return;
+  sessionUploads.delete(url);
+  try {
+    await fetch("/api/upload", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+  } catch { /* best-effort cleanup */ }
+}
+
+// After a successful save the session's uploads are committed — never auto-delete
+// them on a later remove (they may still be referenced by the saved product).
+export function commitUploads(): void {
+  sessionUploads.clear();
 }
 
 async function shrink(file: File, maxDim: number, quality: number): Promise<File> {

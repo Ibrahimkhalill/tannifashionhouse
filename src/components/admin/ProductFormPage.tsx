@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ImageUploadZone } from "@/components/admin/ImageUploadZone";
-import { compressAndUpload } from "@/lib/image-upload";
+import { compressAndUpload, discardUpload, commitUploads } from "@/lib/image-upload";
 import {
   ChevronLeft, ChevronRight, RefreshCw, Plus, Trash2, X, Check,
   Package, Palette, Ruler, Layers, Save, FileText,
@@ -280,15 +280,25 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
   const updateColorRow = (hex: string, patch: Partial<ColorRow>) =>
     setForm((f) => ({ ...f, colorRows: f.colorRows.map((r) => r.color === hex ? { ...r, ...patch } : r) }));
 
-  const removeColorRow = (hex: string) =>
+  const removeColorRow = (hex: string) => {
+    discardUpload(form.colorRows.find((r) => r.color === hex)?.image); // free unsaved photo
     setForm((f) => ({ ...f, colorRows: f.colorRows.filter((r) => r.color !== hex) }));
+  };
+
+  // Clear a colour's photo — also delete it from Cloudinary if it was an unsaved upload.
+  const clearColorImg = (hex: string) => {
+    discardUpload(form.colorRows.find((r) => r.color === hex)?.image);
+    updateColorRow(hex, { image: "" });
+  };
 
   const handleColorImg = async (hex: string, file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Images only"); return; }
     if (file.size > 20 * 1024 * 1024)   { toast.error("Max 20 MB"); return; }
+    const previous = form.colorRows.find((r) => r.color === hex)?.image;
     const t = toast.loading("Uploading…");
     try {
       const url = await compressAndUpload(file);   // Cloudinary URL, not base64
+      discardUpload(previous);                     // drop the photo being replaced
       updateColorRow(hex, { image: url });
       toast.dismiss(t); toast.success("Photo uploaded");
     } catch {
@@ -433,6 +443,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
         return;
       }
 
+      commitUploads(); // saved → these images are committed, don't auto-delete them later
       toast.success(mode === "edit" ? "Product updated" : "Product published! 🎉");
       router.push("/admin/products");
     } finally {
@@ -784,7 +795,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                           const cName = activeColors.find((ac) => ac.hex === row.color)?.name ?? row.color;
                           return (
                             <div key={row.color} className="grid grid-cols-[64px_1fr_40px] sm:grid-cols-[64px_1fr_130px_90px_110px_40px] gap-3 items-center px-4 py-3">
-                              <ColorImgBtn src={row.image} onFile={(f) => handleColorImg(row.color, f)} onClear={() => updateColorRow(row.color, { image: "" })} />
+                              <ColorImgBtn src={row.image} onFile={(f) => handleColorImg(row.color, f)} onClear={() => clearColorImg(row.color)} />
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="size-4 rounded-full shrink-0 border-2 border-white shadow ring-1 ring-slate-200" style={{ background: row.color }} />
                                 <span className="text-sm font-semibold text-slate-700 truncate">{cName}</span>
@@ -867,7 +878,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                           <div key={row.color} className="border border-slate-200 rounded-2xl overflow-hidden">
                             {/* Color header */}
                             <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-100">
-                              <ColorImgBtn src={row.image} onFile={(f) => handleColorImg(row.color, f)} onClear={() => updateColorRow(row.color, { image: "" })} />
+                              <ColorImgBtn src={row.image} onFile={(f) => handleColorImg(row.color, f)} onClear={() => clearColorImg(row.color)} />
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <span className="size-4 rounded-full shrink-0 border-2 border-white shadow ring-1 ring-slate-200" style={{ background: row.color }} />
                                 <div className="min-w-0">

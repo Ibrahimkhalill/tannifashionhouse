@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Upload, X, ImagePlus, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { compressAndUpload } from "@/lib/image-upload";
+import { compressAndUpload, discardUpload } from "@/lib/image-upload";
 
 interface Props {
   images: string[];
@@ -54,7 +54,10 @@ export function ImageUploadZone({ images, onChange, maxImages = 6 }: Props) {
     setUrl("");
   };
 
-  const remove = (i: number) => onChange(images.filter((_, idx) => idx !== i));
+  const remove = (i: number) => {
+    discardUpload(images[i]);   // free the Cloudinary image if it was an unsaved session upload
+    onChange(images.filter((_, idx) => idx !== i));
+  };
 
   return (
     <div className="space-y-3">
