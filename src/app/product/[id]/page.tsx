@@ -193,6 +193,19 @@ function ProductPage() {
       .catch(() => {});
   }, []);
 
+  // Admin-defined colour names (hex → name) so swatches show the real names set in
+  // Attributes → Colors, not a hardcoded guess ("Classic").
+  const [colorNames, setColorNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    cachedJson<{ colors: { name: string; hex: string }[] }>("/api/colors")
+      .then(({ colors }) => {
+        const m: Record<string, string> = {};
+        (colors ?? []).forEach((c) => { if (c.hex) m[c.hex.toLowerCase()] = c.name; });
+        setColorNames(m);
+      })
+      .catch(() => {});
+  }, []);
+
   const sortedReviews = useMemo(() => {
     const list = [...productReviews];
     if (reviewSort === "recent") list.sort((a, b) => b.createdAt - a.createdAt);
@@ -222,6 +235,9 @@ function ProductPage() {
   }
 
   if (!p) { notFound(); return null; }
+
+  // Prefer the admin's colour name for this hex; fall back to a sensible guess.
+  const colorName = (hex: string) => colorNames[(hex ?? "").toLowerCase()] ?? colorLabelFromHex(hex);
 
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   // Real admin-authored rich description (HTML). Empty / blank editor state falls back to generic copy.
@@ -656,7 +672,7 @@ function ProductPage() {
             <p className="mb-3 text-sm font-medium text-foreground sm:text-[15px]">
               <span className="font-semibold">Colors:</span>{" "}
               <span className="text-muted-foreground">
-                {colorLabelFromHex(p.colors[color] ?? "#ccc")}
+                {colorName(p.colors[color] ?? "#ccc")}
               </span>
             </p>
             <div className="flex flex-wrap gap-2.5">
@@ -667,7 +683,7 @@ function ProductPage() {
                   onClick={() => { setColor(i); setColorOverride(p.colorImages?.[i] ?? null); setHoveredColor(null); }}
                   onMouseEnter={() => setHoveredColor(i)}
                   onMouseLeave={() => setHoveredColor(null)}
-                  aria-label={`Color ${colorLabelFromHex(c)}`}
+                  aria-label={`Color ${colorName(c)}`}
                   aria-pressed={color === i}
                   className={`relative size-16 shrink-0 overflow-hidden rounded-lg border-2 bg-secondary/60 p-1 transition-all duration-200 active:scale-[0.98] sm:size-[4.5rem] ${
                     color === i ? "border-foreground" : "border-border hover:border-foreground/40"
@@ -692,7 +708,8 @@ function ProductPage() {
           </div>
           )}
 
-          {/* Size */}
+          {/* Size — hidden for one-size / unstitched products (no sizes) */}
+          {p.sizes.length > 0 && (
           <div className="mt-5 pt-5 border-t border-border/60 lg:border-t-0 lg:pt-0">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-sm font-medium sm:text-[15px]">
@@ -726,6 +743,7 @@ function ProductPage() {
               ))}
             </div>
           </div>
+          )}
 
           {/* Quantity + Add to cart (same row at sm+) + Buy now full width — reference */}
           <div className="mt-5 space-y-3 pt-5 border-t border-border/60 lg:border-t-0 lg:pt-0">
