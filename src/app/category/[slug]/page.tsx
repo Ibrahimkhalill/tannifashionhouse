@@ -37,8 +37,12 @@ const PAGE_SIZE = 12;
 function CategoryPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
-  const sub = useSearchParams().get("sub") ?? "";   // clothing type filter, e.g. ?sub=T-Shirts
-  const title = sub || slug.charAt(0).toUpperCase() + slug.slice(1);
+  const searchParams = useSearchParams();
+  const sub = searchParams.get("sub") ?? "";              // clothing type filter, e.g. ?sub=T-Shirts
+  const filter = searchParams.get("filter") ?? "";        // "featured" | "trending" — shows all of that set
+  const title = filter
+    ? filter.charAt(0).toUpperCase() + filter.slice(1) + " Products"
+    : sub || slug.charAt(0).toUpperCase() + slug.slice(1);
 
   const [search, setSearch]       = useState("");
   const [bands, setBands]         = useState<string[]>([]);
@@ -60,7 +64,11 @@ function CategoryPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/products?category=${slug}&limit=100`)
+    // ?filter=featured|trending shows the whole set; otherwise all products in the category.
+    const url = (filter === "featured" || filter === "trending")
+      ? `/api/products?${filter}=true&limit=100`
+      : `/api/products?category=${slug}&limit=100`;
+    fetch(url)
       .then((r) => r.json())
       .then(({ products }) => {
         const prods: Product[] = products ?? [];
@@ -75,7 +83,7 @@ function CategoryPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, filter]);
 
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);

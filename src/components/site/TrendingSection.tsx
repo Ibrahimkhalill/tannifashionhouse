@@ -74,7 +74,7 @@ export function TrendingSection() {
         )}
         <div className="mt-8 flex justify-center">
           <Link
-            href="/search?sort=new"
+            href="/category/fashion?filter=trending"
             className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-foreground hover:text-background"
           >
             {t("sec.viewall")} <ArrowRight className="size-4" />

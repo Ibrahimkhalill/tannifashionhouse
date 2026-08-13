@@ -29,7 +29,7 @@ function SearchPageContent() {
   const [total, setTotal]     = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage]       = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => { setQ(searchParams.get("q") ?? ""); }, [searchParams]);
 
@@ -83,14 +83,22 @@ function SearchPageContent() {
         </div>
 
         {/* Results */}
-        {results.length === 0 ? (
+        {loading ? (
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : results.length === 0 ? (
           <div className="mt-10 space-y-10">
             {/* Empty state hero */}
             <div className="flex flex-col items-center text-center py-10 px-4">
               <div className="size-20 rounded-full bg-secondary flex items-center justify-center mb-5">
                 <SearchIcon className="size-9 text-muted-foreground/40" strokeWidth={1.5} />
               </div>
-              <h2 className="text-xl font-bold tracking-tight">No results for &ldquo;{q}&rdquo;</h2>
+              <h2 className="text-xl font-bold tracking-tight">
+                {q.trim() ? <>No results for &ldquo;{q}&rdquo;</> : "No products found"}
+              </h2>
               <p className="text-sm text-muted-foreground mt-2 max-w-xs">
                 Check the spelling or try a more general keyword
               </p>

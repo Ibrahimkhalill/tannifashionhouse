@@ -237,7 +237,7 @@ export function ProductCard({ p }: { p: Product }) {
             onClick={handleAdd}
             className="
               mt-3 flex h-10 w-full items-center justify-center gap-1.5
-              rounded-full border-2 border-foreground bg-transparent text-sm font-bold tracking-tight text-foreground
+              rounded-full border border-slate-200 bg-white text-sm font-semibold tracking-tight text-foreground
               transition-all duration-200 ease-out
               hover:border-accent hover:bg-accent hover:text-white
               active:scale-[0.98] lg:h-11
