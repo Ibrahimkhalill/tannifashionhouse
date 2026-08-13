@@ -31,7 +31,7 @@ const SORT_OPTIONS = [
 
 type SortKey = typeof SORT_OPTIONS[number]["value"];
 
-const ALL_CATEGORIES = ["T-Shirts", "Shirts", "Polo", "Panjabi", "Jeans", "Tops", "Dresses", "Outerwear", "Shoes"];
+const ALL_CATEGORIES = ["Salwar Kameez", "T-Shirts", "Shirts", "Polo", "Panjabi", "Jeans", "Tops", "Dresses", "Outerwear", "Shoes"];
 const PAGE_SIZE = 12;
 
 function CategoryPage() {

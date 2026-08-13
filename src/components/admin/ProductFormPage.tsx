@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ImageUploadZone } from "@/components/admin/ImageUploadZone";
+import { compressAndUpload } from "@/lib/image-upload";
 import {
   ChevronLeft, ChevronRight, RefreshCw, Plus, Trash2, X, Check,
   Package, Palette, Ruler, Layers, Save, FileText,
@@ -282,12 +283,17 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
   const removeColorRow = (hex: string) =>
     setForm((f) => ({ ...f, colorRows: f.colorRows.filter((r) => r.color !== hex) }));
 
-  const handleColorImg = (hex: string, file: File) => {
+  const handleColorImg = async (hex: string, file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Images only"); return; }
-    if (file.size > 8 * 1024 * 1024)    { toast.error("Max 8 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => updateColorRow(hex, { image: e.target?.result as string });
-    reader.readAsDataURL(file);
+    if (file.size > 20 * 1024 * 1024)   { toast.error("Max 20 MB"); return; }
+    const t = toast.loading("Uploading…");
+    try {
+      const url = await compressAndUpload(file);   // Cloudinary URL, not base64
+      updateColorRow(hex, { image: url });
+      toast.dismiss(t); toast.success("Photo uploaded");
+    } catch {
+      toast.dismiss(t); toast.error("Upload failed");
+    }
   };
 
   const addSizeToColor = (hex: string) =>

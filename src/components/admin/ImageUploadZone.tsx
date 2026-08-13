@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, X, ImagePlus, Link2 } from "lucide-react";
+import { Upload, X, ImagePlus, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { compressAndUpload } from "@/lib/image-upload";
 
 interface Props {
   images: string[];
@@ -15,22 +16,33 @@ export function ImageUploadZone({ images, onChange, maxImages = 6 }: Props) {
   const [url, setUrl] = useState("");
   const [drag, setDrag] = useState(false);
   const [tab, setTab] = useState<"upload" | "url">("upload");
+  const [uploading, setUploading] = useState(false);
 
-  const processFile = (file: File) => {
-    if (images.length >= maxImages) { toast.error(`Max ${maxImages} images`); return; }
-    if (!file.type.startsWith("image/")) { toast.error("Only image files allowed"); return; }
-    if (file.size > 8 * 1024 * 1024) { toast.error("Image must be under 8 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const b64 = e.target?.result as string;
-      onChange([...images, b64]);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFiles = (files: FileList | null) => {
+  // Upload each picked file to Cloudinary (compressed) and store URLs — never base64.
+  const handleFiles = async (files: FileList | null) => {
     if (!files) return;
-    Array.from(files).slice(0, maxImages - images.length).forEach(processFile);
+    const room = maxImages - images.length;
+    if (room <= 0) { toast.error(`Max ${maxImages} images`); return; }
+    const pick = Array.from(files).filter((f) => {
+      if (!f.type.startsWith("image/")) { toast.error("Only image files allowed"); return false; }
+      if (f.size > 20 * 1024 * 1024) { toast.error("Image must be under 20 MB"); return false; }
+      return true;
+    }).slice(0, room);
+    if (!pick.length) return;
+
+    setUploading(true);
+    const t = toast.loading(`Uploading ${pick.length} image${pick.length > 1 ? "s" : ""}…`);
+    try {
+      const urls: string[] = [];
+      for (const f of pick) {
+        try { urls.push(await compressAndUpload(f)); }
+        catch { toast.error(`Failed to upload ${f.name}`); }
+      }
+      toast.dismiss(t);
+      if (urls.length) { onChange([...images, ...urls]); toast.success(`${urls.length} image${urls.length > 1 ? "s" : ""} uploaded`); }
+    } finally {
+      setUploading(false);
+    }
   };
 
   const addUrl = () => {
@@ -64,17 +76,17 @@ export function ImageUploadZone({ images, onChange, maxImages = 6 }: Props) {
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files); }}
-          onClick={() => fileRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-8 gap-3 cursor-pointer transition ${
+          onClick={() => !uploading && fileRef.current?.click()}
+          className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-8 gap-3 transition ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"} ${
             drag ? "border-[#ef4444] bg-red-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
           }`}
         >
           <div className="size-12 rounded-2xl bg-slate-100 flex items-center justify-center">
-            <ImagePlus className="size-6 text-slate-400" />
+            {uploading ? <Loader2 className="size-6 text-slate-400 animate-spin" /> : <ImagePlus className="size-6 text-slate-400" />}
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-slate-700">Click to upload or drag & drop</p>
-            <p className="text-xs text-slate-400 mt-0.5">{images.length} of {maxImages} images uploaded · PNG, JPG, WebP up to 8MB</p>
+            <p className="text-sm font-semibold text-slate-700">{uploading ? "Uploading…" : "Click to upload or drag & drop"}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{images.length} of {maxImages} images uploaded · JPG, PNG, WebP</p>
           </div>
           <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
             onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />

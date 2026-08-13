@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, X, ImagePlus, Link2 } from "lucide-react";
+import { Upload, X, ImagePlus, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { compressAndUpload } from "@/lib/image-upload";
 
 interface Props {
   value: string;
@@ -12,21 +13,30 @@ interface Props {
 }
 
 /**
- * Single-image picker for admin forms — upload a file (stored as base64,
- * same as ImageUploadZone) or paste a URL. Shows a live preview with remove.
+ * Single-image picker for admin forms — uploads the file to Cloudinary
+ * (compressed) and stores the URL, or paste a URL. Live preview with remove.
  */
 export function SingleImageUpload({ value, onChange, hint }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [drag, setDrag] = useState(false);
   const [tab, setTab] = useState<"upload" | "url">("upload");
+  const [uploading, setUploading] = useState(false);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Only image files allowed"); return; }
-    if (file.size > 8 * 1024 * 1024) { toast.error("Image must be under 8 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => onChange(e.target?.result as string);
-    reader.readAsDataURL(file);
+    if (file.size > 20 * 1024 * 1024) { toast.error("Image must be under 20 MB"); return; }
+    setUploading(true);
+    const t = toast.loading("Uploading…");
+    try {
+      const uploaded = await compressAndUpload(file);
+      onChange(uploaded);
+      toast.dismiss(t); toast.success("Uploaded");
+    } catch {
+      toast.dismiss(t); toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const addUrl = () => {
@@ -55,17 +65,17 @@ export function SingleImageUpload({ value, onChange, hint }: Props) {
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) processFile(f); }}
-          onClick={() => fileRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl flex items-center justify-center gap-3 py-5 px-4 cursor-pointer transition ${
+          onClick={() => !uploading && fileRef.current?.click()}
+          className={`border-2 border-dashed rounded-2xl flex items-center justify-center gap-3 py-5 px-4 transition ${uploading ? "cursor-wait opacity-70" : "cursor-pointer"} ${
             drag ? "border-[#ef4444] bg-red-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
           }`}
         >
           <div className="size-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-            <ImagePlus className="size-5 text-slate-400" />
+            {uploading ? <Loader2 className="size-5 text-slate-400 animate-spin" /> : <ImagePlus className="size-5 text-slate-400" />}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
-            <p className="text-xs text-slate-400 mt-0.5">{hint ?? "PNG, JPG, WebP up to 8MB"}</p>
+            <p className="text-sm font-semibold text-slate-700">{uploading ? "Uploading…" : "Click to upload or drag & drop"}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{hint ?? "JPG, PNG, WebP"}</p>
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ""; }} />

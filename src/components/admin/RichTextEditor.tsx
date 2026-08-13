@@ -14,6 +14,7 @@ import {
   Link2, Quote, Undo, Redo, RemoveFormatting, ImagePlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { compressAndUpload } from "@/lib/image-upload";
 
 interface Props {
   value: string;
@@ -91,16 +92,20 @@ export function RichTextEditor({
     setImgUrl(""); setImgOpen(false);
   };
 
-  // Insert image from file (FileReader → base64)
-  const insertImgFile = (file: File) => {
+  // Insert image from file — upload to Cloudinary (compressed) and embed the URL,
+  // never base64 (base64 in the description would bloat the product-save payload).
+  const insertImgFile = async (file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Only image files"); return; }
-    if (file.size > 8 * 1024 * 1024)    { toast.error("Max 8 MB"); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      editor.chain().focus().setImage({ src: e.target?.result as string }).run();
+    if (file.size > 20 * 1024 * 1024)   { toast.error("Max 20 MB"); return; }
+    const t = toast.loading("Uploading…");
+    try {
+      const url = await compressAndUpload(file);
+      editor.chain().focus().setImage({ src: url }).run();
+      toast.dismiss(t); toast.success("Image added");
       setImgOpen(false);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.dismiss(t); toast.error("Upload failed");
+    }
   };
 
   const closeAll = () => { setHeadingOpen(false); setLinkOpen(false); setImgOpen(false); };
