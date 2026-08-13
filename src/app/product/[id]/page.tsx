@@ -672,7 +672,7 @@ function ProductPage() {
             <p className="mb-3 text-sm font-medium text-foreground sm:text-[15px]">
               <span className="font-semibold">Colors:</span>{" "}
               <span className="text-muted-foreground">
-                {colorName(p.colors[color] ?? "#ccc")}
+                {colorName(p.colors[hoveredColor ?? color] ?? "#ccc")}
               </span>
             </p>
             <div className="flex flex-wrap gap-2.5">
