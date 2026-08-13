@@ -89,7 +89,7 @@ export const dict: Dict = {
   "trust.support.title": { en: "24/7 support", bn: "২৪/৭ সাপোর্ট" },
   "trust.support.desc": { en: "We're here to help", bn: "আমরা সাহায্যে আছি" },
   // footer
-  "footer.tagline": { en: "Premium fashion for Bangladesh — panjabi, shirts, dresses & more. Cash on Delivery, nationwide shipping.", bn: "বাংলাদেশের জন্য প্রিমিয়াম ফ্যাশন — পাঞ্জাবি, শার্ট, ড্রেস ও আরও। ক্যাশ অন ডেলিভারি, সারাদেশে শিপিং।" },
+  "footer.tagline": { en: "Your outfit, your identity — a trusted address for tasteful, premium clothing. Cash on Delivery, nationwide.", bn: "আপনার পোশাক, আপনার ব্যক্তিত্বের পরিচয় — রুচিশীল ও প্রিমিয়াম পোশাকের বিশ্বস্ত ঠিকানা। ক্যাশ অন ডেলিভারি।" },
   "footer.bn_tagline": { en: "A new address for shopping", bn: "কেনাকাটার নতুন ঠিকানা" },
   "footer.shop": { en: "Shop", bn: "শপ" },
   "footer.help": { en: "Help", bn: "সাহায্য" },

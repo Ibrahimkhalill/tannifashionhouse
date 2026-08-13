@@ -22,7 +22,7 @@ export function Footer() {
       title: "footer.help",
       links: [
         { key: "footer.l.track",   href: "/track" },
-        { key: "footer.l.contact", href: "mailto:support@tannifashionhouse.com" },
+        { key: "footer.l.contact", href: "mailto:stntanni@gmail.com" },
       ],
     },
   ];
@@ -83,15 +83,15 @@ export function Footer() {
               <div className="mt-5 space-y-2 text-sm text-white/50">
                 <div className="flex items-center gap-2">
                   <Phone className="size-3.5 shrink-0 text-accent" />
-                  <span>+880 1999-000000</span>
+                  <span>01829-674786</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="size-3.5 shrink-0 text-accent" />
-                  <span>support@tannifashionhouse.com</span>
+                  <span>stntanni@gmail.com</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="size-3.5 shrink-0 text-accent" />
-                  <span>Dhaka, Bangladesh</span>
+                  <span>Shonir Akra, Jatrabari, Dhaka</span>
                 </div>
               </div>
 
