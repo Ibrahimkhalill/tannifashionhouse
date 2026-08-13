@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ImageUploadZone } from "@/components/admin/ImageUploadZone";
 import { compressAndUpload, discardUpload, commitUploads } from "@/lib/image-upload";
+import { colorLabelFromHex } from "@/lib/product-filters";
 import {
   ChevronLeft, ChevronRight, RefreshCw, Plus, Trash2, X, Check,
   Package, Palette, Ruler, Layers, Save, FileText,
@@ -792,7 +793,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                       </div>
                       <div className="divide-y divide-slate-100">
                         {form.colorRows.map((row) => {
-                          const cName = activeColors.find((ac) => ac.hex === row.color)?.name ?? row.color;
+                          const cName = activeColors.find((ac) => ac.hex === row.color)?.name ?? colorLabelFromHex(row.color);
                           return (
                             <div key={row.color} className="grid grid-cols-[64px_1fr_40px] sm:grid-cols-[64px_1fr_130px_90px_110px_40px] gap-3 items-center px-4 py-3">
                               <ColorImgBtn src={row.image} onFile={(f) => handleColorImg(row.color, f)} onClear={() => clearColorImg(row.color)} />
