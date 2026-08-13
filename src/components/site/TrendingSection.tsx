@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import type { Product } from "./ProductCard";
 import { useT } from "@/lib/i18n";
+import { cachedJson } from "@/lib/api-cache";
 
 export function TrendingSection() {
   const { t, lang } = useT();
@@ -13,8 +14,7 @@ export function TrendingSection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products?trending=true&limit=5")
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>("/api/products?trending=true&limit=5")
       .then(({ products }) =>
         setItems(
           (products ?? []).slice(0, 5).map((p: Product) => ({

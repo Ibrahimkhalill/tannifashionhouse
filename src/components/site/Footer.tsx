@@ -136,9 +136,9 @@ export function Footer() {
           
         </div>
 
-        {/* Bottom bar */}
+        {/* Bottom bar — extra bottom padding on mobile so the fixed bottom-nav never covers it */}
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 sm:flex-row sm:px-6">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 pt-5 pb-24 sm:flex-row sm:px-6 lg:pb-5">
             <span className="text-xs text-white/40">{t("footer.copyright")}</span>
             <span className="text-xs text-white/40">
               Developed by{" "}

@@ -37,6 +37,7 @@ import { Price } from "@/components/site/Price";
 import { SizeGuideModal } from "@/components/site/SizeGuideModal";
 import { colorLabelFromHex } from "@/lib/product-filters";
 import { DEFAULT_SHIPPING_POLICY, type ShippingPolicy } from "@/lib/shipping-policy";
+import { cachedJson } from "@/lib/api-cache";
 
 // Review shape the JSX renders (flattened from the API response).
 type UiReview = {
@@ -99,17 +100,17 @@ function ProductPage() {
   const [related, setRelated] = useState<Product[]>([]);
 
   useEffect(() => {
-    fetch(`/api/products/${id}`)
-      .then((r) => r.ok ? r.json() : null)
+    cachedJson<{ product?: ApiProduct }>(`/api/products/${id}`)
       .then((data) => {
-        if (!data) { setP(null); return; }
-        setP(data.product ?? data);
+        const prod = (data.product ?? data) as ApiProduct;
+        if (!prod) { setP(null); return; }
+        setP(prod);
         // Fetch related from same category
-        const cat = (data.product ?? data).category;
+        const cat = prod.category;
         if (cat) {
-          fetch(`/api/products?category=${cat}&limit=6`)
-            .then((r) => r.json())
-            .then(({ products }) => setRelated((products ?? []).filter((x: Product) => x.id !== id).slice(0, 5)));
+          cachedJson<{ products: Product[] }>(`/api/products?category=${cat}&limit=6`)
+            .then(({ products }) => setRelated((products ?? []).filter((x: Product) => x.id !== id).slice(0, 5)))
+            .catch(() => {});
         }
       })
       .catch(() => setP(null));

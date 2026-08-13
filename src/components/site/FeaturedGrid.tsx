@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import type { Product } from "./ProductCard";
 import { useT } from "@/lib/i18n";
+import { cachedJson } from "@/lib/api-cache";
 
 const TABS = [
   { label: "All",      filter: null },
@@ -23,8 +24,7 @@ export function FeaturedGrid() {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    fetch("/api/products?featured=true&limit=20")
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>("/api/products?featured=true&limit=20")
       .then(({ products }) => setAll(products ?? []))
       .catch(() => setAll([]))
       .finally(() => setLoading(false));

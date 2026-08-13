@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { HeroSlide } from "@/lib/content-types";
 import { HeroSkeleton } from "./skeletons";
+import { cachedJson } from "@/lib/api-cache";
 
 // Used only when a slide has no image of its own.
 const FALLBACK_HERO_IMG =
@@ -16,8 +17,7 @@ export function HeroSlider() {
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    fetch("/api/hero-slides")
-      .then((r) => r.json())
+    cachedJson<HeroSlide[]>("/api/hero-slides")
       .then((data) => setSlides(Array.isArray(data) ? data : []))
       .catch(() => setSlides([]));
   }, []);

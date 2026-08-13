@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import type { Product } from "./ProductCard";
+import { cachedJson } from "@/lib/api-cache";
 
 // Shows every product (newest first) — so normal products (not featured/trending)
 // still appear on the homepage without the customer having to search.
@@ -12,8 +13,7 @@ export function NewArrivals() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products?sort=new&limit=10")
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>("/api/products?sort=new&limit=10")
       .then(({ products }) => setItems(products ?? []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));

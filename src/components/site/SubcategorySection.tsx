@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SUBCATEGORIES } from "@/lib/products";
 import type { AdminCategory } from "@/lib/content-types";
 import { SubcategoryCardsSkeleton } from "./skeletons";
+import { cachedJson } from "@/lib/api-cache";
 
 type SubItem = { label: string; image: string; slug?: string };
 
@@ -12,8 +13,7 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
   const [subs, setSubs] = useState<SubItem[] | null>(null);
 
   useEffect(() => {
-    fetch(`/api/categories?slug=${slug}`)
-      .then((r) => r.json())
+    cachedJson<{ categories: AdminCategory[] }>(`/api/categories?slug=${slug}`)
       .then(({ categories }) => {
         if (categories?.length > 0) {
           setSubs(categories.map((c: AdminCategory) => ({ label: c.name, image: c.image ?? "", slug: c.slug })));
