@@ -47,7 +47,7 @@ function CategoryPage() {
   const [search, setSearch]       = useState("");
   const [bands, setBands]         = useState<string[]>([]);
   const [sizes, setSizes]         = useState<string[]>([]);
-  const [cats, setCats]           = useState<string[]>([]);   // clothing-type filter (by subcategory)
+  const [cats, setCats]           = useState<string[]>(sub ? [sub] : []);   // clothing-type filter (by subcategory) — seeded from ?sub=
   const [brands, setBrands]       = useState<string[]>([]);
   const [colorHexes, setColorHexes] = useState<string[]>([]);
   const [sort, setSort]           = useState<SortKey>("feat");
@@ -85,6 +85,10 @@ function CategoryPage() {
       .finally(() => setLoading(false));
   }, [slug, filter]);
 
+  // Keep the clothing-type filter in sync with the URL ?sub= so the sidebar chip
+  // and the URL never contradict each other (e.g. ?sub=Shirts + T-Shirts chip → 0).
+  useEffect(() => { setCats(sub ? [sub] : []); }, [sub]);
+
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);
   const toggleCat  = (c: string)  => setCats((v)  => v.includes(c) ? v.filter((x) => x !== c) : [...v, c]);
@@ -108,7 +112,6 @@ function CategoryPage() {
 
   const list = useMemo(() => {
     let arr = [...allProducts];
-    if (sub) arr = arr.filter((p) => p.subcategory === sub);
     if (search) arr = arr.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
     if (bands.length) arr = arr.filter((p) => PRICE_BANDS.filter((b) => bands.includes(b.id)).some((b) => b.test(p.price)));
     if (sizes.length) arr = arr.filter((p) => p.sizes.some((s) => sizes.includes(s)));
@@ -120,7 +123,7 @@ function CategoryPage() {
     if (sort === "sale") arr = arr.filter((p) => !!p.oldPrice);
     if (sort === "new")  arr = [...arr].reverse();
     return arr;
-  }, [allProducts, sub, search, bands, sizes, cats, brands, colorHexes, sort]);
+  }, [allProducts, search, bands, sizes, cats, brands, colorHexes, sort]);
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);

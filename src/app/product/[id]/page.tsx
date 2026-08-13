@@ -150,7 +150,7 @@ function ProductPage() {
   const [stock, setStock] = useState<number | null>(null);
   useEffect(() => { if (p?.stock !== undefined) setStock(p.stock ?? null); }, [p]);
   // Gallery autoplay — pauses while zooming or hovering a color swatch
-  const totalThumbs = p?.images && p.images.length > 1 ? p.images.length : 4;
+  const totalThumbs = Math.max(1, p?.images?.length ?? 1);
   useEffect(() => {
     if (zoom.active || hoveredColor !== null) return;
     const t = setInterval(() => {
@@ -359,7 +359,7 @@ function ProductPage() {
     toast.success("Reply posted!");
   };
 
-  const thumbs = p.images && p.images.length > 1 ? p.images : [p.image, p.image, p.image, p.image];
+  const thumbs = p.images && p.images.length > 0 ? p.images : [p.image];
   // Hovering a color previews it; a clicked color shows until the user (or
   // autoplay) picks another image; otherwise the carousel position rules.
   const hoverImage = hoveredColor !== null ? p.colorImages?.[hoveredColor] : null;
@@ -392,8 +392,8 @@ function ProductPage() {
         {/* z-30 ensures the zoom panel beats any stacking contexts created by transforms in the right column */}
         <div className="relative z-30 lg:sticky lg:top-24 lg:self-start">
           <div className="flex flex-col gap-3 lg:flex-row lg:gap-3">
-            {/* Vertical thumbnails — lg+ only (reference: row below image on mobile/tablet) */}
-            <div className="hidden lg:flex flex-col gap-2 w-[72px] shrink-0 order-2 lg:order-1">
+            {/* Vertical thumbnails — lg+ only (hidden when there's just one image) */}
+            <div className={`${thumbs.length > 1 ? "hidden lg:flex" : "hidden"} flex-col gap-2 w-[72px] shrink-0 order-2 lg:order-1`}>
               {thumbs.map((img, i) => (
                 <button
                   key={i}
@@ -413,7 +413,7 @@ function ProductPage() {
                 onMouseEnter={() => setZoom((z) => ({ ...z, active: true }))}
                 onMouseLeave={() => setZoom({ active: false, x: 0, y: 0 })}
                 onMouseMove={handleMove}
-                className="relative aspect-square rounded-2xl bg-secondary overflow-hidden border lg:cursor-crosshair"
+                className="relative aspect-square rounded-2xl bg-white overflow-hidden border lg:cursor-crosshair"
               >
                 {/* Shimmer until the active image is loaded */}
                 {!mainImgLoaded && <span aria-hidden className="skeleton-shimmer absolute inset-0" />}
@@ -430,7 +430,7 @@ function ProductPage() {
                     }
                   }}
                   onLoad={() => setLoadedSrc(activeImage)}
-                  className={`size-full object-cover transition duration-500 ${mainImgLoaded ? "opacity-100" : "opacity-0"}`}
+                  className={`size-full object-contain transition duration-500 ${mainImgLoaded ? "opacity-100" : "opacity-0"}`}
                 />
 
                 {/* Rectangular zoom lens — desktop only, follows the cursor */}
@@ -448,7 +448,8 @@ function ProductPage() {
                   />
                 )}
 
-                {/* Carousel arrows */}
+                {/* Carousel arrows — only with multiple images */}
+                {thumbs.length > 1 && (<>
                 <button
                   type="button"
                   aria-label="Previous image"
@@ -467,11 +468,14 @@ function ProductPage() {
                 >
                   <ChevronRight className="size-4.5" />
                 </button>
+                </>)}
 
-                {/* Image counter */}
+                {/* Image counter — only with multiple images */}
+                {thumbs.length > 1 && (
                 <span className="absolute bottom-3 right-3 z-10 rounded-full bg-foreground/70 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-background backdrop-blur-sm">
                   {thumb + 1}/{thumbs.length}
                 </span>
+                )}
 
                 {/* Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
@@ -510,8 +514,8 @@ function ProductPage() {
                 />
               )}
 
-              {/* Horizontal thumbnails — tablet & mobile (under main image) */}
-              <div className="lg:hidden flex justify-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar pb-0.5 pt-1">
+              {/* Horizontal thumbnails — tablet & mobile (hidden when there's just one image) */}
+              <div className={`${thumbs.length > 1 ? "lg:hidden flex" : "hidden"} justify-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar pb-0.5 pt-1`}>
                 {thumbs.map((img, i) => (
                   <button
                     key={i}
@@ -646,7 +650,8 @@ function ProductPage() {
 
           <div className="my-5 h-px w-full bg-border/80 lg:my-6" />
 
-          {/* Colors — square image swatches like reference */}
+          {/* Colors — square image swatches like reference (hidden for combo packs with no colour choice) */}
+          {p.colors.length > 0 && (
           <div>
             <p className="mb-3 text-sm font-medium text-foreground sm:text-[15px]">
               <span className="font-semibold">Colors:</span>{" "}
@@ -685,6 +690,7 @@ function ProductPage() {
               ))}
             </div>
           </div>
+          )}
 
           {/* Size */}
           <div className="mt-5 pt-5 border-t border-border/60 lg:border-t-0 lg:pt-0">
@@ -856,7 +862,7 @@ function ProductPage() {
                     ["Category", p.categoryName || p.category],
                     ["Brand", p.brand],
                     ["Sizes", p.sizes.length ? p.sizes.join(", ") : "—"],
-                    ["Colours", `${p.colors.length} option${p.colors.length === 1 ? "" : "s"}`],
+                    ["Colours", p.colors.length ? `${p.colors.length} option${p.colors.length === 1 ? "" : "s"}` : ""],
                     ["Material", p.material || "—"],
                   ].filter(([, v]) => v).map(([k, v]) => (
                     <div
