@@ -65,8 +65,9 @@ function CheckoutPage() {
     if (!form.name.trim() || !form.phone.trim() || !form.address.trim() || !form.division) {
       toast.error("Please fill in all fields"); return;
     }
-    if (!/^01\d{9}$/.test(form.phone.trim())) {
-      toast.error("Enter a valid mobile number (01XXXXXXXXX)"); return;
+    // Bangladeshi mobile: 01 + operator digit (3–9) + 8 digits.
+    if (!/^01[3-9]\d{8}$/.test(form.phone.trim())) {
+      toast.error("Enter a valid Bangladeshi mobile number (01XXXXXXXXX)"); return;
     }
     if (cart.length === 0) { toast.error("Your cart is empty"); return; }
 

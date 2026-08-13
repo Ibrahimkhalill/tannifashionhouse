@@ -101,6 +101,28 @@ export async function POST(req: Request) {
   const shippingCost = deliveryArea === "inside" ? 80 : 120;
   const total        = subtotal - discount + shippingCost;
 
+  // ── Fraud / spam guard (COD) — rate-limit by phone ────────────────────────
+  const nowMs = Date.now();
+  const dupe = await db.order.findFirst({
+    where: { phone, createdAt: { gte: new Date(nowMs - 90_000) } }, // same number within 90s
+    select: { id: true },
+  });
+  if (dupe) {
+    return NextResponse.json(
+      { error: "You just placed an order — please wait a minute before ordering again." },
+      { status: 429 },
+    );
+  }
+  const dayCount = await db.order.count({
+    where: { phone, createdAt: { gte: new Date(nowMs - 24 * 60 * 60_000) } }, // last 24h
+  });
+  if (dayCount >= 8) {
+    return NextResponse.json(
+      { error: "Too many orders from this number today. Please contact us to continue." },
+      { status: 429 },
+    );
+  }
+
   // ── 4. Generate unique order ID (retry on collision) ─────────────────────
   let orderId = generateOrderId();
   for (let i = 0; i < 5; i++) {

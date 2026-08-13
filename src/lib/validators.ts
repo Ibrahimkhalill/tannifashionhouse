@@ -2,11 +2,16 @@ import { z } from "zod";
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
+// Bangladeshi mobile: 11 digits starting 01, operator digit 3–9 (013–019).
+// Normalizes +880 / spaces / dashes first so "+880 1712-345678" is accepted.
 const phone = z
   .string()
-  .min(10, "Phone must be at least 10 digits")
-  .max(15, "Phone too long")
-  .regex(/^[0-9+\-\s]+$/, "Invalid phone number");
+  .trim()
+  .transform((s) => {
+    const d = s.replace(/\D/g, "");
+    return d.startsWith("880") ? "0" + d.slice(3) : d;
+  })
+  .refine((s) => /^01[3-9]\d{8}$/.test(s), "Enter a valid Bangladeshi mobile number (01XXXXXXXXX)");
 
 const password = z
   .string()
