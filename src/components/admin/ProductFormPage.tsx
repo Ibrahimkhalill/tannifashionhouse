@@ -51,8 +51,17 @@ type ApiColor = { id: string; name: string; hex: string; status: "ACTIVE" | "INA
 type ApiBadge = { id: string; label: string; tone: "new" | "sale" | "trending"; status: "active" | "inactive" };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/(^-|-$)/g, "");
+}
 function uid() { return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`; }
+const STOREFRONT_HOST = "www.tannifashionhouse.com";
 
 const emptyForm = (): ProductForm => ({
   name: "", category: "", brand: "", price: 0, oldPrice: undefined,
@@ -405,7 +414,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
 
     const payload = {
       name: form.name,
-      slug: form.slug || slugify(form.name),
+      slug: form.slug || slugify(form.name) || `product-${Date.now()}`,
       description: form.description || undefined,
       price: hasVariants ? (minVarPrice || form.price) : form.price,
       oldPrice: form.oldPrice || undefined,
@@ -536,7 +545,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                   placeholder="e.g. Samsung Galaxy A55 5G — 8/128GB" className="h-11 font-semibold" />
                 {form.slug && (
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-slate-400 font-mono truncate">shopbd.com/product/{form.slug}</span>
+                    <span className="text-xs text-slate-400 font-mono truncate">{STOREFRONT_HOST}/product/{form.slug}</span>
                     <button type="button" onClick={() => setForm((f) => ({ ...f, slug: slugify(f.name) }))}
                       className="size-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 transition shrink-0" title="Regenerate">
                       <RefreshCw className="size-3" />
@@ -1037,7 +1046,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Google preview</p>
                     <p className="text-[#1a0dab] text-base leading-snug truncate">{form.metaTitle || form.name || "Product title"}</p>
-                    <p className="text-[#006621] text-xs mt-0.5">shopbd.com/product/{form.slug || "product-slug"}</p>
+                    <p className="text-[#006621] text-xs mt-0.5">{STOREFRONT_HOST}/product/{form.slug || "product-slug"}</p>
                     <p className="text-slate-500 text-xs mt-1 line-clamp-2">{form.metaDescription || "Meta description will appear here…"}</p>
                   </div>
                 </div>
