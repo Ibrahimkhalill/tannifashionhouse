@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useEscapeClose } from "@/hooks/use-escape-close";
 import { SingleImageUpload } from "@/components/admin/SingleImageUpload";
 import { AdminTablePageSkeleton } from "@/components/admin/AdminSkeletons";
+import { invalidate } from "@/lib/api-cache";
 
 type HeroSlide = {
   id: string; badge: string; title: string; subtitle: string; cta: string;
@@ -57,6 +58,7 @@ export default function BannersPage() {
       toast.error(err.error ?? "Failed to save slide");
       return;
     }
+    invalidate("/api/hero-slides");
     toast.success(modal === "edit" ? "Slide updated" : "Slide added");
     closeModal();
     load();
@@ -66,6 +68,7 @@ export default function BannersPage() {
     if (!deleteId) return;
     const res = await fetch(`/api/admin/hero-slides/${deleteId}`, { method: "DELETE" });
     if (!res.ok) { toast.error("Failed to delete slide"); return; }
+    invalidate("/api/hero-slides");
     toast.success("Slide deleted");
     closeModal();
     load();
@@ -76,7 +79,10 @@ export default function BannersPage() {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...s, active: !s.active }),
     });
-    if (res.ok) load();
+    if (res.ok) {
+      invalidate("/api/hero-slides");
+      load();
+    }
     else toast.error("Failed to update slide");
   };
 
@@ -97,7 +103,7 @@ export default function BannersPage() {
 
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-        Upload image only. Other fields are optional and auto-filled with safe defaults.
+        Upload image only. Title, button text and slug are optional.
       </div>
 
       {/* Slides list */}

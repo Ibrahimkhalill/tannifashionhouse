@@ -17,7 +17,7 @@ export function HeroSlider() {
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    cachedJson<HeroSlide[]>("/api/hero-slides")
+    cachedJson<HeroSlide[]>("/api/hero-slides", { persistent: false, ttlMs: 0 })
       .then((data) => setSlides(Array.isArray(data) ? data : []))
       .catch(() => setSlides([]));
   }, []);
