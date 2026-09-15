@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PlaceOrderSchema, parseBody } from "@/lib/validators";
 import { sendOrderEmails } from "@/lib/email";
+import { DEFAULT_SHIPPING_POLICY, normalizePolicy, SHIPPING_POLICY_KEY } from "@/lib/shipping-policy";
 
 function generateOrderId(): string {
   const year = new Date().getFullYear();
@@ -98,7 +99,16 @@ export async function POST(req: Request) {
   });
 
   const subtotal     = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
-  const shippingCost = deliveryArea === "inside" ? 80 : 120;
+  let shippingPolicy = DEFAULT_SHIPPING_POLICY;
+  const policyRow = await db.siteConfig.findUnique({ where: { key: SHIPPING_POLICY_KEY } });
+  if (policyRow?.value) {
+    try {
+      shippingPolicy = normalizePolicy(JSON.parse(policyRow.value));
+    } catch {
+      shippingPolicy = DEFAULT_SHIPPING_POLICY;
+    }
+  }
+  const shippingCost = shippingPolicy.deliveryAreas[deliveryArea]?.price ?? DEFAULT_SHIPPING_POLICY.deliveryAreas[deliveryArea].price;
   const total        = subtotal - discount + shippingCost;
 
   // ── Fraud / spam guard (COD) — rate-limit by phone ────────────────────────

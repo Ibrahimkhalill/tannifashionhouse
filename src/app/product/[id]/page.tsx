@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  Truck,
   RotateCcw,
   Minus,
   Plus,
@@ -36,7 +35,6 @@ import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
 import { SizeGuideModal } from "@/components/site/SizeGuideModal";
 import { colorLabelFromHex } from "@/lib/product-filters";
-import { DEFAULT_SHIPPING_POLICY, type ShippingPolicy } from "@/lib/shipping-policy";
 import { cachedJson } from "@/lib/api-cache";
 
 // Review shape the JSX renders (flattened from the API response).
@@ -93,11 +91,13 @@ type ApiProduct = Product & {
   metaDesc?: string; sku?: string; soldCount?: number;
 };
 
+type RelatedProduct = Product & { dbId?: string };
+
 function ProductPage() {
   const params = useParams<{ id: string }>();
   const id = params.id ?? "";
   const [p, setP]           = useState<ApiProduct | null | undefined>(undefined);
-  const [related, setRelated] = useState<Product[]>([]);
+  const [related, setRelated] = useState<RelatedProduct[]>([]);
 
   useEffect(() => {
     cachedJson<{ product?: ApiProduct }>(`/api/products/${id}`)
@@ -108,8 +108,14 @@ function ProductPage() {
         // Fetch related from same category
         const cat = prod.category;
         if (cat) {
-          cachedJson<{ products: Product[] }>(`/api/products?category=${cat}&limit=6`)
-            .then(({ products }) => setRelated((products ?? []).filter((x: Product) => x.id !== id).slice(0, 5)))
+          cachedJson<{ products: RelatedProduct[] }>(`/api/products?category=${cat}&limit=8`)
+            .then(({ products }) =>
+              setRelated(
+                (products ?? [])
+                  .filter((x) => x.id !== id && x.id !== prod.id && (!prod.dbId || x.dbId !== prod.dbId))
+                  .slice(0, 5)
+              )
+            )
             .catch(() => {});
         }
       })
@@ -132,7 +138,6 @@ function ProductPage() {
   const [color, setColor] = useState(0);
   const [qty, setQty] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-  const [tab, setTab] = useState<"desc" | "shipping">("desc");
   const [reviewSort, setReviewSort] = useState<"recent" | "oldest" | "high" | "low">("recent");
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
@@ -183,15 +188,6 @@ function ProductPage() {
       .catch(() => setReviewEligibility({ eligible: false, purchased: false, alreadyReviewed: false }));
   }, [id]);
   useEffect(() => { loadEligibility(); }, [loadEligibility, user]);
-
-  // Shipping & returns policy — admin-editable, read from the public endpoint.
-  const [shippingPolicy, setShippingPolicy] = useState<ShippingPolicy>(DEFAULT_SHIPPING_POLICY);
-  useEffect(() => {
-    fetch("/api/shipping-policy")
-      .then((r) => r.json())
-      .then((d) => { if (d.policy) setShippingPolicy(d.policy); })
-      .catch(() => {});
-  }, []);
 
   // Admin-defined colour names (hex → name) so swatches show the real names set in
   // Attributes → Colors, not a hardcoded guess ("Classic").
@@ -507,7 +503,6 @@ function ProductPage() {
                   )}
                 </div>
               </div>
-
               {/* ── Side-by-side magnifier panel — desktop only ──────────── */}
               {zoom.active && (
                 <div
@@ -824,110 +819,53 @@ function ProductPage() {
         </div>
       </div>
 
-      {/* ── Tabs: Description / Customer Reviews / Shipping ── */}
+      {/* ── Description ── */}
       <div className="mx-auto max-w-7xl px-4 pb-16">
         <div className="overflow-hidden rounded-2xl border border-border/80 bg-card">
-          {/* Tab header — text + thick underline (reference) */}
-          <div className="flex border-b justify-between border-border/70 bg-background overflow-x-auto no-scrollbar">
-            {[
-              { id: "desc" as const, label: "Description" },
-              { id: "shipping" as const, label: "Shipping & returns" },
-            ].map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setTab(m.id)}
-                className={`relative flex-1  px-4 py-3.5 text-center text-sm font-semibold whitespace-nowrap transition-colors sm:px-6 sm:py-4 sm:text-[15px] ${
-                  tab === m.id
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground/80"
-                }`}
-              >
-                {m.label}
-                <span
-                  className={`absolute bottom-0 left-3 right-3 h-[3px] rounded-full transition-opacity sm:left-4 sm:right-4 ${
-                    tab === m.id ? "bg-foreground opacity-100" : "opacity-0"
-                  }`}
-                />
-              </button>
-            ))}
+          <div className="border-b border-border/70 bg-background px-4 py-3.5 sm:px-6 sm:py-4">
+            <p className="text-center text-sm font-semibold text-foreground sm:text-[15px]">Description</p>
           </div>
 
-          {/* Tab content */}
           <div className="px-4 py-6 sm:px-8 sm:py-8 animate-fade-in">
-            {tab === "desc" && (
-              <div className="max-w-3xl">
-                <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-                  {p.name}
-                </h2>
-                {hasDescription ? (
-                  // Admin-authored rich content (headings, lists, images) from the product editor.
-                  <div
-                    className="prose prose-sm mt-4 max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-img:rounded-xl prose-img:w-full"
-                    dangerouslySetInnerHTML={{ __html: p.description! }}
-                  />
-                ) : (
-                  <p className="mt-4 text-[13px] leading-[1.7] text-muted-foreground sm:text-sm">
-                    No description has been added for this product yet.
-                  </p>
-                )}
+            <div className="max-w-3xl">
+              <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
+                {p.name}
+              </h2>
+              {hasDescription ? (
+                <div
+                  className="prose prose-sm mt-4 max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-img:rounded-xl prose-img:w-full"
+                  dangerouslySetInnerHTML={{ __html: p.description! }}
+                />
+              ) : (
+                <p className="mt-4 text-[13px] leading-[1.7] text-muted-foreground sm:text-sm">
+                  No description has been added for this product yet.
+                </p>
+              )}
 
-                <h3 className="mt-8 text-base font-bold text-foreground sm:text-lg">
-                  Specifications
-                </h3>
-                <dl className="mt-4 space-y-2 border-t border-border/60 pt-2 text-[13px] sm:text-sm">
-                  {[
-                    ["Category", p.categoryName || p.category],
-                    ["Brand", p.brand],
-                    ["Sizes", p.sizes.length ? p.sizes.join(", ") : "—"],
-                    ["Colours", p.colors.length ? `${p.colors.length} option${p.colors.length === 1 ? "" : "s"}` : ""],
-                    ["Material", p.material || "—"],
-                  ].filter(([, v]) => v).map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="flex justify-between gap-4 border-b border-border/40 py-2.5 last:border-0"
-                    >
-                      <dt className="text-muted-foreground">{k}</dt>
-                      <dd className="text-right font-medium text-foreground">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            )}
-
-            {tab === "shipping" && (
-              <div className="grid sm:grid-cols-2 gap-6 max-w-2xl">
+              <h3 className="mt-8 text-base font-bold text-foreground sm:text-lg">
+                Specifications
+              </h3>
+              <dl className="mt-4 space-y-2 border-t border-border/60 pt-2 text-[13px] sm:text-sm">
                 {[
-                  { icon: Truck,     ...shippingPolicy.delivery },
-                  { icon: RotateCcw, ...shippingPolicy.returns },
-                ].map((s) => (
-                  <div key={s.title} className="rounded-2xl border p-5">
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="size-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                        <s.icon className="size-5 text-accent" />
-                      </span>
-                      <h3 className="font-semibold">{s.title}</h3>
-                    </div>
-                    <ul className="space-y-2.5">
-                      {s.items.map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-start gap-2 text-sm text-muted-foreground"
-                        >
-                          <Check className="size-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+                  ["Category", p.categoryName || p.category],
+                  ["Brand", p.brand],
+                  ["Sizes", p.sizes.length ? p.sizes.join(", ") : "—"],
+                  ["Colours", p.colors.length ? `${p.colors.length} option${p.colors.length === 1 ? "" : "s"}` : ""],
+                  ["Material", p.material || "—"],
+                ].filter(([, v]) => v).map(([k, v]) => (
+                  <div
+                    key={k}
+                    className="flex justify-between gap-4 border-b border-border/40 py-2.5 last:border-0"
+                  >
+                    <dt className="text-muted-foreground">{k}</dt>
+                    <dd className="text-right font-medium text-foreground">{v}</dd>
                   </div>
                 ))}
-              </div>
-            )}
-
+              </dl>
+            </div>
           </div>
         </div>
       </div>
-
       {/* ── Related products ── */}
       <section className="mx-auto max-w-7xl px-4 pb-16">
         <div className="flex items-end justify-between mb-6">
@@ -950,7 +888,7 @@ function ProductPage() {
           <div className="flex gap-3 snap-x snap-mandatory pb-1">
             {related.map((rp) => (
               <div key={rp.id} className="snap-start shrink-0 w-[52vw]">
-                <ProductCard p={rp} />
+                <ProductCard p={rp} compact />
               </div>
             ))}
           </div>
@@ -959,7 +897,7 @@ function ProductPage() {
         {/* Desktop: grid */}
         <div className="hidden sm:grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {related.map((rp) => (
-            <ProductCard key={rp.id} p={rp} />
+            <ProductCard key={rp.id} p={rp} compact />
           ))}
         </div>
       </section>
@@ -970,3 +908,6 @@ function ProductPage() {
 }
 
 export default ProductPage;
+
+
+

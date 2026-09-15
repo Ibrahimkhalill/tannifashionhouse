@@ -49,7 +49,7 @@ export function SubcategorySection({ slug, title }: { slug: string; title: strin
         {subs.map((sub) => (
           <Link
             key={sub.label}
-            href={`/category/${slug}?sub=${encodeURIComponent(sub.label)}`}
+            href={`/category/${slug}?sub=${encodeURIComponent(sub.slug || sub.label)}`}
             className="group relative overflow-hidden rounded-2xl border border-border bg-card hover:border-foreground/30 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
           >
             {/* Image */}

@@ -17,15 +17,6 @@ const emptyForm = (): Omit<HeroSlide, "id"> => ({
   image: "", gradient: "from-zinc-900 via-black to-black", active: true, order: 0,
 });
 
-const GRADIENT_OPTIONS = [
-  { label: "Black Zinc", value: "from-zinc-900 via-black to-black" },
-  { label: "Black Neutral", value: "from-neutral-900 via-black to-black" },
-  { label: "Black Stone", value: "from-stone-900 via-black to-black" },
-  { label: "Dark Slate", value: "from-slate-900 via-slate-800 to-slate-900" },
-  { label: "Dark Gray", value: "from-gray-900 via-gray-800 to-gray-900" },
-  { label: "Deep Indigo", value: "from-indigo-950 via-indigo-900 to-black" },
-];
-
 export default function BannersPage() {
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +48,7 @@ export default function BannersPage() {
   useEscapeClose(modal !== null, closeModal);
 
   const handleSave = async () => {
-    if (!form.title.trim()) { toast.error("Title is required"); return; }
-    if (!form.slug.trim())  { toast.error("Category slug is required"); return; }
+    if (!form.image.trim()) { toast.error("Slide image is required"); return; }
     const res = modal === "edit" && editing
       ? await fetch(`/api/admin/hero-slides/${editing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
       : await fetch("/api/admin/hero-slides", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
@@ -107,8 +97,7 @@ export default function BannersPage() {
 
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-        Slides are shown in order on the homepage hero carousel. Inactive slides are hidden from the storefront.
-        If no image URL is provided, a dark gradient background is used.
+        Upload image only. Other fields are optional and auto-filled with safe defaults.
       </div>
 
       {/* Slides list */}
@@ -127,30 +116,20 @@ export default function BannersPage() {
                 <span className="text-xs font-bold">{idx + 1}</span>
               </div>
 
-              {/* Preview */}
-              <div className={`w-32 sm:w-48 shrink-0 relative bg-gradient-to-br ${s.gradient} flex flex-col items-start justify-end p-4 overflow-hidden`} style={{ minHeight: 100 }}>
-                {s.image && (
-                  <img src={s.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                            {/* Preview */}
+              <div className="w-32 sm:w-48 shrink-0 relative bg-slate-900 overflow-hidden" style={{ minHeight: 100 }}>
+                {s.image ? (
+                  <img src={s.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 bg-slate-900" />
                 )}
-                {s.badge && (
-                  <span className="relative z-10 bg-[#ef4444] text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-1">{s.badge}</span>
-                )}
-                <p className="relative z-10 text-white text-xs font-semibold leading-tight line-clamp-2">{s.title || "Slide title"}</p>
               </div>
 
               {/* Info */}
               <div className="flex-1 px-4 py-3 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  {s.badge && <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">{s.badge}</span>}
-                  <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded">/{s.slug}</span>
-                </div>
-                <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{s.title}</h3>
-                <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{s.subtitle}</p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                  <span>CTA: <strong className="text-slate-700">{s.cta}</strong></span>
-                  <span>·</span>
-                  <span>Gradient: <strong className="text-slate-700">{GRADIENT_OPTIONS.find((g) => g.value === s.gradient)?.label ?? "Custom"}</strong></span>
-                </div>
+                <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{s.title || "Hero banner"}</h3>
+                <p className="text-xs text-slate-500 mt-1 line-clamp-1">Button: {s.cta || "Shop Now"}</p>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-1">/{s.slug || "fashion"}</p>
               </div>
 
               {/* Actions */}
@@ -195,85 +174,47 @@ export default function BannersPage() {
                 <img src={form.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
               )}
               <div className="relative z-10">
-                {form.badge && <span className="bg-[#ef4444] text-white text-xs font-bold px-3 py-1 rounded-full block w-fit mb-1.5">{form.badge}</span>}
-                <p className="text-white font-bold text-lg leading-tight">{form.title || "Slide title"}</p>
-                <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{form.subtitle}</p>
+                <p className="text-white font-bold text-lg leading-tight">{form.title || "Hero banner"}</p>
+                <p className="text-white/80 text-xs mt-0.5 line-clamp-1">{form.cta || "Shop Now"}</p>
               </div>
             </div>
 
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Badge Text</label>
-                  <input value={form.badge} onChange={(e) => setForm((f) => ({ ...f, badge: e.target.value }))}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                    placeholder="e.g. 22% OFF" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">CTA Button</label>
-                  <input value={form.cta} onChange={(e) => setForm((f) => ({ ...f, cta: e.target.value }))}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                    placeholder="e.g. Shop Now" />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Title *</label>
-                <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                  placeholder="e.g. Latest Fashion Trends" />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Subtitle</label>
-                <textarea value={form.subtitle} onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition resize-none"
-                  rows={2} placeholder="Short description shown below the title" />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Category Slug * <span className="text-slate-400 font-normal">(link target)</span></label>
-                <input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                  placeholder="e.g. fashion, gadgets" />
-                <p className="text-xs text-slate-400 mt-1">Links to /category/{"{slug}"}</p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Slide Image <span className="text-slate-400 font-normal">(optional)</span></label>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block">Slide Image *</label>
+                <p className="text-xs text-slate-400">Upload banner image. Title, button text and slug are optional.</p>
                 <SingleImageUpload value={form.image} onChange={(image) => setForm((f) => ({ ...f, image }))} hint="Hero slide image — PNG, JPG, WebP up to 8MB" />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-2">Background Gradient</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {GRADIENT_OPTIONS.map((g) => (
-                    <button key={g.value} type="button" onClick={() => setForm((f) => ({ ...f, gradient: g.value }))}
-                      className={`h-10 rounded-xl text-xs font-semibold border transition bg-gradient-to-r ${g.value} text-white ${form.gradient === g.value ? "ring-2 ring-red-400 border-transparent" : "border-transparent opacity-80 hover:opacity-100"}`}>
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Title</label>
+                <input
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
+                  placeholder="e.g. Latest Fashion Trends"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Order</label>
-                  <input type="number" value={form.order} onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
-                    min={0} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-2">Visibility</label>
-                  <div className="flex gap-2">
-                    {([true, false] as const).map((v) => (
-                      <button key={String(v)} type="button" onClick={() => setForm((f) => ({ ...f, active: v }))}
-                        className={`flex-1 h-10 rounded-xl text-sm font-semibold border transition ${form.active === v ? "bg-[#0f172a] text-white border-[#0f172a]" : "border-slate-200 text-slate-600 hover:border-slate-400"}`}>
-                        {v ? "Active" : "Hidden"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Button Text</label>
+                <input
+                  value={form.cta}
+                  onChange={(e) => setForm((f) => ({ ...f, cta: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
+                  placeholder="e.g. Shop Now"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Category Slug</label>
+                <input
+                  value={form.slug}
+                  onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-red-400 transition"
+                  placeholder="e.g. fashion, saree"
+                />
+                <p className="text-xs text-slate-400 mt-1">Links to /category/{"{slug}"} (optional)</p>
               </div>
             </div>
 
@@ -306,3 +247,6 @@ export default function BannersPage() {
     </div>
   );
 }
+
+
+

@@ -16,9 +16,9 @@ import { useProductCache } from "@/hooks/useProductCache";
 
 function WishlistPage() {
   const router = useRouter();
-  const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart, wishlistHydrated } = useStore();
   const [removed, setRemoved] = useState<string[]>([]);
-  const productCache = useProductCache(wishlist);
+  const { productsById: productCache, loading: productsLoading } = useProductCache(wishlist);
 
   const items = wishlist
     .filter((id) => !removed.includes(id))
@@ -42,6 +42,38 @@ function WishlistPage() {
   const clearAll = () => {
     items.forEach((p) => handleRemove(p.id));
   };
+
+  const hasWishlistIds = wishlist.length > 0;
+  const waitingForHydration = !wishlistHydrated;
+  const waitingForProducts = hasWishlistIds && productsLoading;
+
+  if (waitingForHydration || waitingForProducts) {
+    return (
+      <Layout>
+        <PageHeader
+          centered
+          color="oklch(0.96 0 0)"
+          title="Your Wishlist"
+          subtitle="Loading your saved items..."
+          crumbs={[{ label: "Home", to: "/" }, { label: "Wishlist" }]}
+        />
+        <div className="mx-auto max-w-7xl px-4 py-8 pb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="rounded-lg border bg-card overflow-hidden animate-pulse">
+                <div className="aspect-square bg-secondary" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 w-20 bg-secondary rounded" />
+                  <div className="h-4 w-32 bg-secondary rounded" />
+                  <div className="h-4 w-20 bg-secondary rounded mt-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   /* ── Empty state ── */
   if (items.length === 0) {

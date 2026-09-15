@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Layout } from "@/components/site/Layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Lock, Banknote, ShieldCheck, RotateCcw, Minus, Plus, Trash2, Check,
   ChevronDown, MapPin, Tag, ShoppingCart, User as UserIcon, Phone,
@@ -12,21 +12,21 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
-
-const BD_DIVISIONS = [
-  "Dhaka", "Chattogram", "Khulna", "Rajshahi",
-  "Barishal", "Sylhet", "Rangpur", "Mymensingh",
-] as const;
+import { useProductCache } from "@/hooks/useProductCache";
+import { cachedJson } from "@/lib/api-cache";
+import { DEFAULT_SHIPPING_POLICY, type DeliveryAreaKey, type ShippingPolicy } from "@/lib/shipping-policy";
 
 function CheckoutPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, clearCart, cartSubtotal, user } = useStore();
+  const { cart, setQty, removeFromCart, clearCart, user, cartHydrated } = useStore();
+  const { productsById: productCache, loading: productsLoading } = useProductCache(cart.map((it) => it.id));
+  const cartItems = cart.map((it) => ({ ...it, p: productCache[it.id] })).filter((it) => it.p);
   const router = useRouter();
 
   const [form, setForm] = useState({
     name:     user?.name  ?? "",
     phone:    user?.phone ?? "",
     address:  "",
-    division: "",
+    deliveryArea: "inside" as DeliveryAreaKey,
   });
   const [submitting,  setSubmitting]  = useState(false);
   const [coupon,      setCoupon]      = useState("");
@@ -35,11 +35,17 @@ function CheckoutPage() {
 
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  // Shipping is derived from division — Dhaka is "inside" (৳80), everywhere else "outside" (৳120).
-  const deliveryArea: "inside" | "outside" =
-    form.division && form.division !== "Dhaka" ? "outside" : "inside";
-  const shippingCost = deliveryArea === "inside" ? 80 : 120;
-  const subtotal     = cartSubtotal;
+  const [policy, setPolicy] = useState<ShippingPolicy>(DEFAULT_SHIPPING_POLICY);
+  useEffect(() => {
+    cachedJson<{ policy?: ShippingPolicy }>("/api/shipping-policy")
+      .then((d) => { if (d.policy) setPolicy(d.policy); })
+      .catch(() => {});
+  }, []);
+
+  const selectedArea = policy.deliveryAreas[form.deliveryArea] ?? DEFAULT_SHIPPING_POLICY.deliveryAreas.inside;
+  const deliveryArea = form.deliveryArea;
+  const shippingCost = selectedArea.price;
+  const subtotal     = cartItems.reduce((sum, it) => sum + (it.p?.price ?? 0) * it.qty, 0);
   const total        = subtotal - discount + shippingCost;
 
   const applyCoupon = async () => {
@@ -62,7 +68,7 @@ function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || !form.address.trim() || !form.division) {
+    if (!form.name.trim() || !form.phone.trim() || !form.address.trim() || !form.deliveryArea) {
       toast.error("Please fill in all fields"); return;
     }
     // Bangladeshi mobile: 01 + operator digit (3–9) + 8 digits.
@@ -80,8 +86,8 @@ function CheckoutPage() {
           name:     form.name.trim(),
           phone:    form.phone.trim(),
           address:  form.address.trim(),
-          district: form.division,     // simplified checkout collects division only
-          division: form.division,
+          district: selectedArea.label,
+          division: selectedArea.label,
           deliveryArea,
           payment:  "cod",
           items:    cart.map((it) => ({ productId: it.id, qty: it.qty, size: it.size })),
@@ -104,6 +110,32 @@ function CheckoutPage() {
     }
   };
 
+  const waitingForItems = !cartHydrated || (cart.length > 0 && productsLoading && cartItems.length === 0);
+
+  if (waitingForItems) {
+    return (
+      <Layout hideTrust>
+        <PageHeader
+          centered
+          color="oklch(0.96 0 0)"
+          title="Checkout"
+          subtitle="Loading your checkout items..."
+          crumbs={[{ label: "Home", to: "/" }, { label: "Checkout" }]}
+        />
+        <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+              ))}
+            </div>
+            <div className="h-80 rounded-xl bg-muted animate-pulse" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (cart.length === 0) {
     return (
       <Layout hideTrust>
@@ -124,8 +156,8 @@ function CheckoutPage() {
   const OrderSummaryContent = () => (
     <div className="flex flex-col gap-4 lg:gap-5">
       <div className="flex flex-col gap-2.5 lg:gap-3">
-        {cart.map((it) => {
-          const p = resolveProduct(it.id);
+        {cartItems.map((it) => {
+          const p = it.p;
           if (!p) return null;
           return (
             <div key={it.id + (it.size ?? "")} className="flex gap-3 rounded-xl border border-border/70 bg-background p-3 lg:gap-3.5 lg:p-3.5">
@@ -185,7 +217,7 @@ function CheckoutPage() {
           <Price amount={subtotal} size="sm" className="!font-semibold" />
         </div>
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-muted-foreground">Shipping</span>
+          <span className="text-sm text-muted-foreground">Delivery ({selectedArea.label})</span>
           <Price amount={shippingCost} size="sm" className="!font-semibold" />
         </div>
         {discount > 0 && (
@@ -254,7 +286,7 @@ function CheckoutPage() {
 
           {/* ══════════ Delivery + Payment ══════════ */}
           <div className="flex flex-col gap-4 lg:col-span-7 lg:gap-5">
-            {/* Delivery Address — Name, Phone, Division, Full Address */}
+            {/* Delivery Address — Name, Phone, Delivery Area, Full Address */}
             <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 lg:p-7">
               <div className="flex items-center gap-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary lg:size-9 lg:rounded-xl">
@@ -272,16 +304,17 @@ function CheckoutPage() {
                   onChange={(v) => set("phone")(v.replace(/\D/g, "").slice(0, 11))} />
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Division <span className="text-accent">*</span>
+                    Delivery Area <span className="text-accent">*</span>
                   </label>
                   <div className="relative">
-                    <select value={form.division} onChange={(e) => set("division")(e.target.value)} required
+                    <select value={form.deliveryArea} onChange={(e) => set("deliveryArea")(e.target.value as DeliveryAreaKey)} required
                       className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-3.5 pr-9 text-sm font-medium outline-none focus:border-foreground">
-                      <option value="">Select Division</option>
-                      {BD_DIVISIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                      <option value="inside">{policy.deliveryAreas.inside.label}</option>
+                      <option value="outside">{policy.deliveryAreas.outside.label}</option>
                     </select>
                     <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Charge: ৳{selectedArea.price.toLocaleString()}</p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">

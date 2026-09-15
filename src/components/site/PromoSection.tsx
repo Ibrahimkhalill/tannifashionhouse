@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { PromoBanner } from "@/lib/content-types";
+import { cachedJson } from "@/lib/api-cache";
 
 // Static fallback (shown until localStorage is read)
 const FALLBACK_BANNERS: PromoBanner[] = [
@@ -35,13 +36,26 @@ const FALLBACK_BANNERS: PromoBanner[] = [
 
 export function PromoSection() {
   const [banners, setBanners] = useState<PromoBanner[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/promo-banners")
-      .then((r) => r.json())
+    cachedJson<PromoBanner[]>("/api/promo-banners")
       .then((data) => setBanners(Array.isArray(data) ? data : []))
-      .catch(() => setBanners([]));
+      .catch(() => setBanners([]))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:py-10 lg:px-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="min-h-[190px] sm:min-h-[220px] rounded-2xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   // Admin-driven: no promo banners set → hide the section (no hardcoded fallback).
   if (!banners || banners.length === 0) return null;

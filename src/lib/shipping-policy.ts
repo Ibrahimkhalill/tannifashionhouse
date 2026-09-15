@@ -4,7 +4,13 @@
 // bullet list. Icons are fixed by section on the storefront (truck / rotate).
 
 export type PolicySection = { title: string; items: string[] };
-export type ShippingPolicy = { delivery: PolicySection; returns: PolicySection };
+export type DeliveryAreaKey = "inside" | "outside";
+export type DeliveryAreaConfig = { label: string; price: number };
+export type ShippingPolicy = {
+  delivery: PolicySection;
+  returns: PolicySection;
+  deliveryAreas: Record<DeliveryAreaKey, DeliveryAreaConfig>;
+};
 
 export const SHIPPING_POLICY_KEY = "shipping-policy";
 
@@ -27,6 +33,10 @@ export const DEFAULT_SHIPPING_POLICY: ShippingPolicy = {
       "Refund processed within 3–5 days",
     ],
   },
+  deliveryAreas: {
+    inside: { label: "Inside Dhaka", price: 80 },
+    outside: { label: "Outside Dhaka", price: 120 },
+  },
 };
 
 const MAX_ITEMS = 8;
@@ -44,6 +54,19 @@ function normalizeSection(raw: unknown, fallback: PolicySection): PolicySection 
   return { title, items: items.length ? items : fallback.items };
 }
 
+function normalizeArea(
+  raw: unknown,
+  fallback: DeliveryAreaConfig,
+): DeliveryAreaConfig {
+  const r = (raw ?? {}) as Partial<DeliveryAreaConfig>;
+  const label = typeof r.label === "string" && r.label.trim()
+    ? r.label.trim().slice(0, 60)
+    : fallback.label;
+  const n = typeof r.price === "number" ? r.price : Number(r.price);
+  const price = Number.isFinite(n) ? Math.max(0, Math.min(5000, Math.round(n))) : fallback.price;
+  return { label, price };
+}
+
 // Coerce anything (parsed JSON, untrusted body) into a valid ShippingPolicy,
 // falling back to defaults for missing/invalid parts.
 export function normalizePolicy(raw: unknown): ShippingPolicy {
@@ -51,5 +74,15 @@ export function normalizePolicy(raw: unknown): ShippingPolicy {
   return {
     delivery: normalizeSection(r.delivery, DEFAULT_SHIPPING_POLICY.delivery),
     returns: normalizeSection(r.returns, DEFAULT_SHIPPING_POLICY.returns),
+    deliveryAreas: {
+      inside: normalizeArea(
+        (r.deliveryAreas as Partial<Record<DeliveryAreaKey, DeliveryAreaConfig>> | undefined)?.inside,
+        DEFAULT_SHIPPING_POLICY.deliveryAreas.inside,
+      ),
+      outside: normalizeArea(
+        (r.deliveryAreas as Partial<Record<DeliveryAreaKey, DeliveryAreaConfig>> | undefined)?.outside,
+        DEFAULT_SHIPPING_POLICY.deliveryAreas.outside,
+      ),
+    },
   };
 }

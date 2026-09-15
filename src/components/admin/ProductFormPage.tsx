@@ -7,6 +7,7 @@ import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { ImageUploadZone } from "@/components/admin/ImageUploadZone";
 import { compressAndUpload, discardUpload, commitUploads } from "@/lib/image-upload";
 import { colorLabelFromHex } from "@/lib/product-filters";
+import { normalizeProductSlug, slugifyText } from "@/lib/slug";
 import {
   ChevronLeft, ChevronRight, RefreshCw, Plus, Trash2, X, Check,
   Package, Palette, Ruler, Layers, Save, FileText,
@@ -51,15 +52,6 @@ type ApiColor = { id: string; name: string; hex: string; status: "ACTIVE" | "INA
 type ApiBadge = { id: string; label: string; tone: "new" | "sale" | "trending"; status: "active" | "inactive" };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/(^-|-$)/g, "");
-}
 function uid() { return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`; }
 const STOREFRONT_HOST = "www.tannifashionhouse.com";
 
@@ -212,7 +204,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
         badge: p.badgeLabel ? { label: p.badgeLabel, tone: (p.badgeTone as "new" | "sale" | "trending") ?? "new" } : undefined,
         material: p.material ?? "", description: p.description ?? "",
         subcategory: p.subcategory ?? "", metaTitle: p.metaTitle ?? "",
-        metaDescription: p.metaDesc ?? "", slug: p.slug ?? slugify(p.name),
+        metaDescription: p.metaDesc ?? "", slug: normalizeProductSlug(p.slug ?? "", p.name),
         stock: p.stock ?? 0, status: p.status === "DRAFT" ? "draft" : "active",
         categoryId: p.categoryId ?? "", brandId: p.brandId ?? "",
         tags: p.tags ?? [], variantType: detectVariantType(p),
@@ -414,7 +406,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
 
     const payload = {
       name: form.name,
-      slug: form.slug || slugify(form.name) || `product-${Date.now()}`,
+      slug: normalizeProductSlug(form.slug || "", form.name) || `product-${Date.now()}`,
       description: form.description || undefined,
       price: hasVariants ? (minVarPrice || form.price) : form.price,
       oldPrice: form.oldPrice || undefined,
@@ -541,12 +533,12 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
               <div>
                 <FieldLabel required>Product Name</FieldLabel>
                 <TInput value={form.name} autoFocus
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: slugify(e.target.value) }))}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: slugifyText(e.target.value) }))}
                   placeholder="e.g. Samsung Galaxy A55 5G — 8/128GB" className="h-11 font-semibold" />
                 {form.slug && (
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-xs text-slate-400 font-mono truncate">{STOREFRONT_HOST}/product/{form.slug}</span>
-                    <button type="button" onClick={() => setForm((f) => ({ ...f, slug: slugify(f.name) }))}
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, slug: slugifyText(f.name) }))}
                       className="size-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-600 transition shrink-0" title="Regenerate">
                       <RefreshCw className="size-3" />
                     </button>

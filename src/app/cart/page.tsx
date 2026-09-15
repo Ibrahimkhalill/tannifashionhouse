@@ -22,28 +22,59 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
+import { cachedJson } from "@/lib/api-cache";
+import { useProductCache } from "@/hooks/useProductCache";
 
 const FREE_SHIP_THRESHOLD = 1500;
 
 function CartPage() {
-  const { cart, resolveProduct, setQty, removeFromCart, cartSubtotal, toggleWishlist } =
+  const { cart, setQty, removeFromCart, toggleWishlist, cartHydrated } =
     useStore();
-  const items = cart.map((it) => ({ ...it, p: resolveProduct(it.id)! })).filter((x) => x.p);
+  const { productsById: productCache, loading: productsLoading } = useProductCache(cart.map((it) => it.id));
+  const items = cart.map((it) => ({ ...it, p: productCache[it.id] })).filter((x) => x.p);
+  const subtotal = items.reduce((s, it) => s + (it.p?.price ?? 0) * it.qty, 0);
 
-  const shipping = cartSubtotal >= FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
-  const total = Math.max(0, cartSubtotal + shipping);
+  const shipping = subtotal >= FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
+  const total = Math.max(0, subtotal + shipping);
 
   const [recommended, setRecommended] = useState<Product[]>([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(true);
   useEffect(() => {
-    fetch("/api/products?limit=10")
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>("/api/products?limit=10")
       .then(({ products }) => {
         const inCartIds = new Set(cart.map((it) => it.id));
         setRecommended((products ?? []).filter((p: Product) => !inCartIds.has(p.id)).slice(0, 6));
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRecommendedLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const waitingForItems = !cartHydrated || (cart.length > 0 && productsLoading && items.length === 0);
+
+  if (waitingForItems) {
+    return (
+      <Layout>
+        <PageHeader
+          centered
+          color="oklch(0.96 0 0)"
+          title="Shopping cart"
+          subtitle="Loading your cart items..."
+          crumbs={[{ label: "Home", to: "/" }, { label: "Cart" }]}
+        />
+        <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+            <div className="h-72 rounded-xl bg-muted animate-pulse" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -230,7 +261,7 @@ function CartPage() {
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <Price amount={cartSubtotal} size="sm" className="!font-semibold" />
+                  <Price amount={subtotal} size="sm" className="!font-semibold" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Shipping</span>
@@ -276,7 +307,7 @@ function CartPage() {
               <div className="mt-5 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <Price amount={cartSubtotal} size="md" className="!font-semibold" />
+                  <Price amount={subtotal} size="md" className="!font-semibold" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Shipping</span>
@@ -320,7 +351,7 @@ function CartPage() {
         {/* <QualityBanner /> */}
 
         {/* ── You may also like (full-width, after the trust banner) ──── */}
-        {recommended.length > 0 && (
+        {(recommendedLoading || recommended.length > 0) && (
           <section className="mx-auto w-full max-w-7xl px-4 pb-10 lg:px-6 lg:pb-14">
             <div className="mb-4 flex items-end justify-between gap-3 lg:mb-6">
               <div>
@@ -338,11 +369,17 @@ function CartPage() {
             </div>
 
             <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 no-scrollbar sm:gap-4 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:px-0">
-              {recommended.slice(0, 4).map((p) => (
-                <div key={p.id} className="w-42 shrink-0 sm:w-48 lg:w-auto">
-                  <ProductCard p={p} />
-                </div>
-              ))}
+              {recommendedLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="w-42 shrink-0 sm:w-48 lg:w-auto">
+                      <div className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
+                    </div>
+                  ))
+                : recommended.slice(0, 4).map((p) => (
+                    <div key={p.id} className="w-42 shrink-0 sm:w-48 lg:w-auto">
+                      <ProductCard p={p} />
+                    </div>
+                  ))}
             </div>
           </section>
         )}

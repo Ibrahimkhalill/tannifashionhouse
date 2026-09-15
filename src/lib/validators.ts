@@ -183,13 +183,13 @@ export const ColorSchema = z.object({
 // ─── Admin: HeroSlide ─────────────────────────────────────────────────────────
 
 export const HeroSlideSchema = z.object({
-  badge:    z.string().max(40).trim(),
-  title:    z.string().min(1).max(120).trim(),
-  subtitle: z.string().max(300).trim(),
-  cta:      z.string().max(40).trim(),
-  slug:     z.string().max(100).trim(),
-  image:    z.string().max(2000).default(""),
-  gradient: z.string().max(200).trim(),
+  badge:    z.string().max(40).trim().optional().default(""),
+  title:    z.string().max(120).trim().optional().default(""),
+  subtitle: z.string().max(300).trim().optional().default(""),
+  cta:      z.string().max(40).trim().optional().default(""),
+  slug:     z.string().max(100).trim().optional().default(""),
+  image:    z.string().trim().min(1, "Slide image is required").max(2000),
+  gradient: z.string().max(200).trim().optional().default("from-zinc-900 via-black to-black"),
   active:   z.boolean().default(true),
   order:    z.number().int().min(0).default(0),
 });
@@ -254,3 +254,4 @@ export function parseBody<T>(schema: z.ZodSchema<T>, data: unknown):
   }
   return { ok: true, data: result.data };
 }
+

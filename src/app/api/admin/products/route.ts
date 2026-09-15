@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { AdminProductSchema, parseBody } from "@/lib/validators";
+import { normalizeProductSlug } from "@/lib/slug";
 
 // GET /api/admin/products — list all products (any status)
 export async function GET(req: Request) {
@@ -37,7 +38,17 @@ export async function POST(req: Request) {
   if (error) return error;
 
   const body = await req.json().catch(() => null);
-  const parsed = parseBody(AdminProductSchema, body);
+  const source = body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+  const normalizedBody = source
+    ? {
+        ...source,
+        slug: normalizeProductSlug(
+          typeof source.slug === "string" ? source.slug : "",
+          typeof source.name === "string" ? source.name : ""
+        ),
+      }
+    : body;
+  const parsed = parseBody(AdminProductSchema, normalizedBody);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const { variants, ...data } = parsed.data;

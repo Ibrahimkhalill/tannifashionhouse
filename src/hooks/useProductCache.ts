@@ -6,8 +6,12 @@ import type { Product } from "@/components/site/ProductCard";
 
 // Resolves an array of product IDs to Product objects.
 // Checks the static PRODUCTS array first; fetches from API for any missing ones.
-export function useProductCache(ids: string[]): Record<string, Product> {
+export function useProductCache(ids: string[]): {
+  productsById: Record<string, Product>;
+  loading: boolean;
+} {
   const [apiCache, setApiCache] = useState<Record<string, Product>>({});
+  const [loadingIds, setLoadingIds] = useState<Record<string, true>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
 
   const key = ids.join(",");
@@ -19,6 +23,11 @@ export function useProductCache(ids: string[]): Record<string, Product> {
     if (!missing.length) return;
 
     missing.forEach((id) => fetchedRef.current.add(id));
+    setLoadingIds((prev) => {
+      const next = { ...prev };
+      missing.forEach((id) => { next[id] = true; });
+      return next;
+    });
 
     Promise.all(
       missing.map((id) =>
@@ -36,6 +45,11 @@ export function useProductCache(ids: string[]): Record<string, Product> {
       if (Object.keys(entries).length) {
         setApiCache((prev) => ({ ...prev, ...entries }));
       }
+      setLoadingIds((prev) => {
+        const next = { ...prev };
+        missing.forEach((id) => { delete next[id]; });
+        return next;
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -46,5 +60,13 @@ export function useProductCache(ids: string[]): Record<string, Product> {
     if (local) result[id] = local;
     else if (apiCache[id]) result[id] = apiCache[id];
   });
-  return result;
+
+  const loading = ids.some(
+    (id) =>
+      !PRODUCTS.find((p) => p.id === id)
+      && !apiCache[id]
+      && (!fetchedRef.current.has(id) || !!loadingIds[id]),
+  );
+
+  return { productsById: result, loading };
 }

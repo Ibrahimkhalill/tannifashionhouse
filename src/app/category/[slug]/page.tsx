@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
@@ -11,14 +11,17 @@ import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Price } from "@/components/site/Price";
 import { DataPagination } from "@/components/site/DataPagination";
-import { productHasAnyColor } from "@/lib/product-filters";
+import { productHasAnyColor, uniqueColorSwatches } from "@/lib/product-filters";
+import { cachedJson } from "@/lib/api-cache";
 import type { Product } from "@/components/site/ProductCard";
 
-const PRICE_BANDS = [
-  { id: "u1k",   label: "Under ৳1,000",       test: (n: number) => n < 1000 },
-  { id: "1k5k",  label: "৳1,000 – ৳5,000",    test: (n: number) => n >= 1000 && n < 5000 },
-  { id: "5k10k", label: "৳5,000 – ৳10,000",   test: (n: number) => n >= 5000 && n < 10000 },
-  { id: "o10k",  label: "Over ৳10,000",        test: (n: number) => n >= 10000 },
+type PriceBand = { id: string; label: string; test: (n: number) => boolean };
+
+const DEFAULT_PRICE_BANDS: PriceBand[] = [
+  { id: "u1k",  label: "Under ৳1,000",      test: (n: number) => n < 1000 },
+  { id: "1k5k", label: "৳1,000 – ৳5,000",   test: (n: number) => n >= 1000 && n < 5000 },
+  { id: "5k10k",label: "৳5,000 – ৳10,000",  test: (n: number) => n >= 5000 && n < 10000 },
+  { id: "o10k", label: "Over ৳10,000",      test: (n: number) => n >= 10000 },
 ];
 
 const SORT_OPTIONS = [
@@ -31,8 +34,41 @@ const SORT_OPTIONS = [
 
 type SortKey = typeof SORT_OPTIONS[number]["value"];
 
-const ALL_CATEGORIES = ["Salwar Kameez", "T-Shirts", "Shirts", "Polo", "Panjabi", "Jeans", "Tops", "Dresses", "Outerwear", "Shoes"];
 const PAGE_SIZE = 12;
+
+function normalizeFilterKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function makePriceBands(products: Product[]): PriceBand[] {
+  const prices = products.map((p) => p.price).filter((n) => Number.isFinite(n) && n > 0);
+  if (prices.length === 0) return DEFAULT_PRICE_BANDS;
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const tk = (n: number) => `৳${n.toLocaleString()}`;
+
+  if (min === max) {
+    return [{ id: "exact", label: tk(min), test: (n) => n === min }];
+  }
+
+  const rawStep = Math.max(100, Math.ceil((max - min) / 4));
+  const step = Math.ceil(rawStep / 100) * 100;
+  const b1 = min + step;
+  const b2 = min + step * 2;
+  const b3 = min + step * 3;
+
+  return [
+    { id: `p1-${min}-${b1}`, label: `${tk(min)} – ${tk(b1)}`, test: (n) => n >= min && n < b1 },
+    { id: `p2-${b1}-${b2}`, label: `${tk(b1)} – ${tk(b2)}`, test: (n) => n >= b1 && n < b2 },
+    { id: `p3-${b2}-${b3}`, label: `${tk(b2)} – ${tk(b3)}`, test: (n) => n >= b2 && n < b3 },
+    { id: `p4-${b3}`, label: `Over ${tk(b3)}`, test: (n) => n >= b3 },
+  ];
+}
 
 function CategoryPage() {
   const params = useParams<{ slug: string }>();
@@ -58,9 +94,11 @@ function CategoryPage() {
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading]         = useState(true);
-  const [ALL_SIZES, setAllSizes]      = useState<string[]>(["XS","S","M","L","XL","XXL","One size","39","40","41","42","43"]);
+  const [ALL_SIZES, setAllSizes]      = useState<string[]>([]);
+  const [ALL_TYPES, setAllTypes]      = useState<string[]>([]);
   const [ALL_BRANDS, setAllBrands]    = useState<string[]>([]);
   const [COLOR_CATALOG, setColorCatalog] = useState<{ hex: string; label: string }[]>([]);
+  const PRICE_BANDS = useMemo(() => makePriceBands(allProducts), [allProducts]);
 
   useEffect(() => {
     setLoading(true);
@@ -68,26 +106,33 @@ function CategoryPage() {
     const url = (filter === "featured" || filter === "trending")
       ? `/api/products?${filter}=true&limit=100`
       : `/api/products?category=${slug}&limit=100`;
-    fetch(url)
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>(url)
       .then(({ products }) => {
         const prods: Product[] = products ?? [];
         setAllProducts(prods);
-        // Derive filter catalogs from fetched products
-        setAllBrands([...new Set(prods.map((p) => p.brand).filter(Boolean))]);
-        const seen = new Map<string, string>();
-        prods.forEach((p) => (p.colors ?? []).forEach((c: string) => { if (!seen.has(c)) seen.set(c, c); }));
-        setColorCatalog(Array.from(seen.entries()).map(([hex]) => ({ hex, label: hex })));
-        const sizes = [...new Set(prods.flatMap((p) => p.sizes))];
-        if (sizes.length) setAllSizes(sizes);
+        // Derive dynamic filter catalogs from this category result set.
+        setAllBrands([...new Set(prods.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
+        setColorCatalog(uniqueColorSwatches(prods));
+        setAllSizes([...new Set(prods.flatMap((p) => p.sizes).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })));
+        setAllTypes([...new Set(prods.map((p) => p.subcategory?.trim()).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b)));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [slug, filter]);
 
-  // Keep the clothing-type filter in sync with the URL ?sub= so the sidebar chip
-  // and the URL never contradict each other (e.g. ?sub=Shirts + T-Shirts chip → 0).
-  useEffect(() => { setCats(sub ? [sub] : []); }, [sub]);
+  // Keep ?sub= synced with real type labels from fetched products
+  // (handles case/slug differences: "Saree" vs "saree").
+  useEffect(() => {
+    if (!sub) { setCats([]); return; }
+    const subKey = normalizeFilterKey(sub);
+    const matched = ALL_TYPES.find((t) => normalizeFilterKey(t) === subKey);
+    setCats(matched ? [matched] : [sub]);
+  }, [sub, ALL_TYPES]);
+
+  // Keep selected price bands valid when dynamic bands change.
+  useEffect(() => {
+    setBands((prev) => prev.filter((id) => PRICE_BANDS.some((b) => b.id === id)));
+  }, [PRICE_BANDS]);
 
   const toggleBand = (id: string) => setBands((b) => b.includes(id) ? b.filter((x) => x !== id) : [...b, id]);
   const toggleSize = (s: string)  => setSizes((v) => v.includes(s) ? v.filter((x) => x !== s) : [...v, s]);
@@ -115,7 +160,10 @@ function CategoryPage() {
     if (search) arr = arr.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
     if (bands.length) arr = arr.filter((p) => PRICE_BANDS.filter((b) => bands.includes(b.id)).some((b) => b.test(p.price)));
     if (sizes.length) arr = arr.filter((p) => p.sizes.some((s) => sizes.includes(s)));
-    if (cats.length)  arr = arr.filter((p) => cats.includes(p.subcategory ?? ""));
+    if (cats.length) {
+      const selectedTypeKeys = cats.map(normalizeFilterKey);
+      arr = arr.filter((p) => selectedTypeKeys.includes(normalizeFilterKey(p.subcategory ?? "")));
+    }
     if (brands.length) arr = arr.filter((p) => brands.includes(p.brand));
     if (colorHexes.length) arr = arr.filter((p) => productHasAnyColor(p, colorHexes));
     if (sort === "lh")   arr = [...arr].sort((a, b) => a.price - b.price);
@@ -123,7 +171,7 @@ function CategoryPage() {
     if (sort === "sale") arr = arr.filter((p) => !!p.oldPrice);
     if (sort === "new")  arr = [...arr].reverse();
     return arr;
-  }, [allProducts, search, bands, sizes, cats, brands, colorHexes, sort]);
+  }, [allProducts, search, bands, sizes, cats, brands, colorHexes, sort, PRICE_BANDS]);
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -168,7 +216,7 @@ function CategoryPage() {
       {/* Clothing type */}
       <FilterGroup title="Type" onClear={cats.length ? () => setCats([]) : undefined}>
         <div className="flex flex-wrap gap-2 pt-1">
-          {ALL_CATEGORIES.map((c) => (
+          {ALL_TYPES.map((c) => (
             <button
               key={c}
               type="button"
@@ -535,3 +583,4 @@ function ListCard({ p }: { p: Product }) {
 }
 
 export default CategoryPage;
+

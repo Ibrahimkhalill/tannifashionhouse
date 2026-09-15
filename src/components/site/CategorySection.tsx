@@ -6,6 +6,7 @@ import type { Product } from "./ProductCard";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useT, dict } from "@/lib/i18n";
+import { cachedJson } from "@/lib/api-cache";
 
 const sectionColors: Record<string, string> = {
   fashion: "oklch(0.97 0 0)",
@@ -41,8 +42,7 @@ export function CategorySection({
       ? `/api/products?category=${slug}&limit=6`
       : `/api/products?category=${slug}&limit=6`;
 
-    fetch(url)
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>(url)
       .then(({ products }) => setItems(products ?? []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));

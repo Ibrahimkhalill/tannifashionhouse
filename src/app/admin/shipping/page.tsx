@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Truck, RotateCcw, Plus, X, Check, Save } from "lucide-react";
 import { toast } from "sonner";
-import type { ShippingPolicy, PolicySection } from "@/lib/shipping-policy";
+import type { ShippingPolicy, PolicySection, DeliveryAreaKey } from "@/lib/shipping-policy";
 import { AdminCardGridSkeleton } from "@/components/admin/AdminSkeletons";
 
 type SectionKey = "delivery" | "returns";
@@ -57,7 +57,10 @@ export default function ShippingPolicyPage() {
     toast.success("Shipping & returns updated");
   };
 
-  if (!policy) return <AdminCardGridSkeleton cards={2} cols="lg:grid-cols-2" />;
+  const patchArea = (key: DeliveryAreaKey, patch: Partial<{ label: string; price: number }>) =>
+    setPolicy((p) => (p ? { ...p, deliveryAreas: { ...p.deliveryAreas, [key]: { ...p.deliveryAreas[key], ...patch } } } : p));
+
+  if (!policy) return <AdminCardGridSkeleton cards={3} cols="lg:grid-cols-3" />;
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
@@ -122,6 +125,41 @@ export default function ShippingPolicyPage() {
             </div>
           );
         })}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-slate-800">Delivery Areas &amp; Charges</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Shown on checkout. Customers choose one area.</p>
+        </div>
+        <div className="space-y-3">
+          {(["inside", "outside"] as const).map((key) => {
+            const area = policy.deliveryAreas[key];
+            return (
+              <div key={key} className="grid gap-2 sm:grid-cols-[1fr_160px]">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Area Label</label>
+                  <input
+                    value={area.label}
+                    onChange={(e) => patchArea(key, { label: e.target.value })}
+                    className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-red-400 transition"
+                    placeholder={key === "inside" ? "Inside Dhaka" : "Outside Dhaka"}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Charge (৳)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={area.price}
+                    onChange={(e) => patchArea(key, { price: Number(e.target.value || 0) })}
+                    className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-red-400 transition"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Live preview — mirrors the storefront tab */}

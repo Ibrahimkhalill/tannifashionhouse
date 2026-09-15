@@ -41,7 +41,7 @@ const toneClass: Record<NonNullable<Product["badge"]>["tone"], string> = {
   trending: "bg-background/95 text-foreground border border-border backdrop-blur-sm",
 };
 
-export function ProductCard({ p }: { p: Product }) {
+export function ProductCard({ p, compact = false }: { p: Product; compact?: boolean }) {
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   const router = useRouter();
   const { addToCart, toggleWishlist, wishlist } = useStore();
@@ -188,11 +188,11 @@ export function ProductCard({ p }: { p: Product }) {
             min-height locks 2 lines worth so every card aligns. */}
         <Link href={`/product/${p.id}`} className="mt-1">
           <h3
-            className="
-              line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug
+            className={`
+              line-clamp-2 text-sm font-medium leading-snug
               text-foreground transition-colors hover:text-accent
-              lg:min-h-[2.75rem] lg:text-base
-            "
+              ${compact ? "min-h-[2.25rem] lg:text-[0.95rem]" : "min-h-[2.5rem] lg:min-h-[2.75rem] lg:text-base"}
+            `}
           >
             {p.name}
           </h3>
@@ -216,9 +216,9 @@ export function ProductCard({ p }: { p: Product }) {
           <div className="flex items-baseline gap-2">
             <Price
               amount={p.price}
-              size="md"
-              className="!font-bold lg:!text-lg"
-              symbolClassName="lg:!text-[0.88rem]"
+              size={compact ? "sm" : "md"}
+              className={compact ? "!font-semibold" : "!font-bold lg:!text-lg"}
+              symbolClassName={compact ? "" : "lg:!text-[0.88rem]"}
             />
             {p.oldPrice && (
               <Price
@@ -226,8 +226,8 @@ export function ProductCard({ p }: { p: Product }) {
                 size="xs"
                 muted
                 struck
-                className="lg:!text-sm"
-                symbolClassName="lg:!text-[0.65rem]"
+                className={compact ? "" : "lg:!text-sm"}
+                symbolClassName={compact ? "" : "lg:!text-[0.65rem]"}
               />
             )}
           </div>

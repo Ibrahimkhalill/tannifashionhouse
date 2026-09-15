@@ -6,6 +6,7 @@ import { Smartphone, Shirt, Home as HomeIcon, Sparkles, ShoppingBasket, Tag, typ
 import { useT, dict } from "@/lib/i18n";
 import { CategoryStripSkeleton } from "./skeletons";
 import type { AdminCategory } from "@/lib/content-types";
+import { cachedJson } from "@/lib/api-cache";
 
 type K = keyof typeof dict;
 
@@ -36,8 +37,7 @@ export function CategoryStrip() {
   const [adminCats, setAdminCats] = useState<AdminCategory[] | null | undefined>(undefined);
 
   useEffect(() => {
-    fetch("/api/categories?parent=true")
-      .then((r) => r.json())
+    cachedJson<{ categories: { id: string; name: string; slug: string; parentId: string | null; image: string | null; status: string }[] }>("/api/categories?parent=true")
       .then(({ categories }) => {
         const mapped: AdminCategory[] = (categories ?? []).map((c: { id: string; name: string; slug: string; parentId: string | null; image: string | null; status: string }) => ({
           id: c.id, name: c.name, slug: c.slug,

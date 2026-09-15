@@ -55,6 +55,8 @@ type StoreCtx = {
   reviews: Review[];
   addresses: Address[];
   user: User | null;
+  cartHydrated: boolean;
+  wishlistHydrated: boolean;
   addToCart: (id: string, opts?: { qty?: number; size?: string }) => void;
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
@@ -105,13 +107,13 @@ function usePersist<T>(key: string, initial: T) {
     if (!hydrated) return;
     try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
   }, [key, v, hydrated]);
-  return [v, setV] as const;
+  return [v, setV, hydrated] as const;
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
-  const [cart, setCart] = usePersist<CartItem[]>("shopbd:cart", []);
-  const [wishlist, setWishlist] = usePersist<string[]>("shopbd:wishlist", []);
+  const [cart, setCart, cartHydrated] = usePersist<CartItem[]>("shopbd:cart", []);
+  const [wishlist, setWishlist, wishlistHydrated] = usePersist<string[]>("shopbd:wishlist", []);
   const [compareList, setCompareList] = usePersist<string[]>("shopbd:compare", []);
   const [orders, setOrders] = usePersist<Order[]>("shopbd:orders", []);
   const [reviews, setReviews] = usePersist<Review[]>("shopbd:reviews", []);
@@ -268,6 +270,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       cart, wishlist, compareList, orders, reviews, addresses, user,
+      cartHydrated,
+      wishlistHydrated,
       addToCart, removeFromCart, setQty, clearCart, toggleWishlist,
       addToCompare, removeFromCompare, toggleCompare, clearCompare,
       placeOrder, addReview, addReviewReply, hasPurchased, login, logout,

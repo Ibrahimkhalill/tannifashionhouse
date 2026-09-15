@@ -7,6 +7,7 @@ import type { Product } from "./ProductCard";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
+import { cachedJson } from "@/lib/api-cache";
 
 function useCountdown(target: number) {
   const [now, setNow] = useState<number | null>(null);
@@ -76,12 +77,13 @@ export function OffersSection() {
   const target = useState(() => Date.now() + 1000 * 60 * 60 * 12)[0];
   const { h, m, s } = useCountdown(target);
   const [deals, setDeals] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products?sort=hl&limit=20")
-      .then((r) => r.json())
+    cachedJson<{ products: Product[] }>("/api/products?sort=hl&limit=20")
       .then(({ products }) => setDeals((products ?? []).filter((p: Product) => p.oldPrice).slice(0, 4)))
-      .catch(() => setDeals([]));
+      .catch(() => setDeals([]))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -105,7 +107,11 @@ export function OffersSection() {
         </div>
         <div className="min-w-0 p-4 sm:p-8">
           <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {deals.map((p) => <DealCard key={p.id} p={p} />)}
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="aspect-[3/4] rounded-2xl bg-white/10 animate-pulse" />
+                ))
+              : deals.map((p) => <DealCard key={p.id} p={p} />)}
           </div>
           <Link href="/search" className="mt-5 flex items-center justify-center gap-2 text-sm font-medium text-white/70 hover:text-white transition">
             View all deals <ArrowRight className="size-4" />

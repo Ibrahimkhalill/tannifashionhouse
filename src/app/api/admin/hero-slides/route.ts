@@ -3,6 +3,32 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { HeroSlideSchema, parseBody } from "@/lib/validators";
 
+function normalizeSlide(data: {
+  badge: string;
+  title: string;
+  subtitle: string;
+  cta: string;
+  slug: string;
+  image: string;
+  gradient: string;
+  active: boolean;
+  order: number;
+}) {
+  const title = data.title.trim();
+  const slug = data.slug.trim();
+  const cta = data.cta.trim();
+
+  return {
+    ...data,
+    badge: data.badge.trim(),
+    title: title || "Hero Collection",
+    subtitle: data.subtitle.trim(),
+    cta: cta || "Shop Now",
+    slug: slug || "fashion",
+    image: data.image.trim(),
+    gradient: data.gradient.trim() || "from-zinc-900 via-black to-black",
+  };
+}
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -20,7 +46,8 @@ export async function POST(req: Request) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const slide = await db.heroSlide.create({
-    data: { ...parsed.data, image: parsed.data.image ?? "", active: parsed.data.active ?? true, order: parsed.data.order ?? 0 },
+    data: normalizeSlide(parsed.data),
   });
   return NextResponse.json({ slide }, { status: 201 });
 }
+

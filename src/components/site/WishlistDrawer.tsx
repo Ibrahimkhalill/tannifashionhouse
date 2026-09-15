@@ -9,9 +9,9 @@ import { useT } from "@/lib/i18n";
 import { useProductCache } from "@/hooks/useProductCache";
 
 export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { wishlist, toggleWishlist, addToCart, wishlistHydrated } = useStore();
   const { lang } = useT();
-  const productCache = useProductCache(wishlist);
+  const { productsById: productCache, loading: productsLoading } = useProductCache(wishlist);
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +29,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
   if (!open) return null;
 
   const items = wishlist.map((id) => productCache[id]).filter(Boolean);
+  const loading = !wishlistHydrated || (wishlist.length > 0 && productsLoading);
 
   const addAllToCart = () => {
     items.forEach((item) => addToCart(item.id, { size: item.sizes[0] }));
@@ -50,7 +51,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
             </span>
             <div>
               <p className="text-sm font-semibold leading-tight">My wishlist</p>
-              <p className="text-[11px] text-muted-foreground">{items.length} {items.length === 1 ? "item" : "items"}</p>
+              <p className="text-[11px] text-muted-foreground">{loading ? "Loading..." : `${items.length} ${items.length === 1 ? "item" : "items"}`}</p>
             </div>
           </div>
           <button onClick={onClose} className="size-9 rounded-full border flex items-center justify-center hover:bg-secondary transition" aria-label="Close wishlist">
@@ -59,7 +60,20 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {items.length === 0 ? (
+          {loading ? (
+            <div className="p-4 space-y-3 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3 rounded-2xl border bg-card p-3">
+                  <div className="size-20 rounded-xl bg-secondary shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 bg-secondary rounded" />
+                    <div className="h-3 w-1/3 bg-secondary rounded" />
+                    <div className="h-4 w-1/4 bg-secondary rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center px-6 text-center">
               <div className="size-20 rounded-full bg-secondary flex items-center justify-center mb-4">
                 <Heart className="size-8 text-muted-foreground" />
@@ -103,7 +117,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
           )}
         </div>
 
-        {items.length > 0 && (
+        {!loading && items.length > 0 && (
           <div className=" bg-card shrink-0 p-5 space-y-3">
           
             <div className="grid grid-cols-2 gap-2">

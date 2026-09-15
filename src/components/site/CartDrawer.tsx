@@ -10,8 +10,8 @@ import { Price } from "./Price";
 import { useProductCache } from "@/hooks/useProductCache";
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { cart, setQty, removeFromCart, cartSubtotal, cartCount } = useStore();
-  const productCache = useProductCache(cart.map((it) => it.id));
+  const { cart, setQty, removeFromCart, cartCount, cartHydrated } = useStore();
+  const { productsById: productCache, loading: productsLoading } = useProductCache(cart.map((it) => it.id));
   const { lang } = useT();
 
   useEffect(() => {
@@ -29,8 +29,10 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   if (!open) return null;
 
-  const ship = cartSubtotal > 1500 || cartSubtotal === 0 ? 0 : 80;
-  const total = cartSubtotal + ship;
+  const subtotal = cart.reduce((sum, it) => sum + (productCache[it.id]?.price ?? 0) * it.qty, 0);
+  const ship = subtotal > 1500 || subtotal === 0 ? 0 : 80;
+  const total = subtotal + ship;
+  const loading = !cartHydrated || (cart.length > 0 && productsLoading);
 
   return (
     <div
@@ -67,7 +69,20 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         </header>
 
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
-          {cart.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-3.5 rounded-2xl border border-border/90 bg-card p-3.5">
+                  <div className="size-[5.25rem] rounded-xl bg-secondary sm:size-24" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 rounded bg-secondary" />
+                    <div className="h-3 w-1/3 rounded bg-secondary" />
+                    <div className="h-4 w-1/4 rounded bg-secondary mt-4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : cart.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
               <div className="mb-6 flex size-[5.5rem] items-center justify-center rounded-2xl border-2 border-dashed border-border bg-secondary">
                 <ShoppingCart className="size-9 text-muted-foreground" strokeWidth={1.4} />
@@ -166,7 +181,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           <footer className="shrink-0 space-y-4 border-t border-border bg-card/95 px-5 py-5 backdrop-blur-sm">
             <div className="flex items-center justify-between text-sm">
               <span className="font-semibold text-foreground">Subtotal</span>
-              <Price amount={cartSubtotal} size="md" />
+              <Price amount={subtotal} size="md" />
             </div>
             {ship > 0 && (
               <div className="flex items-center justify-between text-[13px] text-muted-foreground">
