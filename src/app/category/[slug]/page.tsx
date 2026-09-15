@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
@@ -105,7 +105,7 @@ function CategoryPage() {
     // ?filter=featured|trending shows the whole set; otherwise all products in the category.
     const url = (filter === "featured" || filter === "trending")
       ? `/api/products?${filter}=true&limit=100`
-      : `/api/products?category=${slug}&limit=100`;
+      : `/api/products?category=${slug}&sub=${encodeURIComponent(sub)}&limit=100`;
     cachedJson<{ products: Product[] }>(url)
       .then(({ products }) => {
         const prods: Product[] = products ?? [];
@@ -114,11 +114,11 @@ function CategoryPage() {
         setAllBrands([...new Set(prods.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
         setColorCatalog(uniqueColorSwatches(prods));
         setAllSizes([...new Set(prods.flatMap((p) => p.sizes).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })));
-        setAllTypes([...new Set(prods.map((p) => p.subcategory?.trim()).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b)));
+        setAllTypes([...new Set(prods.flatMap((p) => [p.subcategory?.trim() ?? "", p.category?.trim() ?? ""]).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b)));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [slug, filter]);
+  }, [slug, filter, sub]);
 
   // Keep ?sub= synced with real type labels from fetched products
   // (handles case/slug differences: "Saree" vs "saree").
@@ -126,7 +126,7 @@ function CategoryPage() {
     if (!sub) { setCats([]); return; }
     const subKey = normalizeFilterKey(sub);
     const matched = ALL_TYPES.find((t) => normalizeFilterKey(t) === subKey);
-    setCats(matched ? [matched] : [sub]);
+    setCats(matched ? [matched] : []);
   }, [sub, ALL_TYPES]);
 
   // Keep selected price bands valid when dynamic bands change.
@@ -162,7 +162,13 @@ function CategoryPage() {
     if (sizes.length) arr = arr.filter((p) => p.sizes.some((s) => sizes.includes(s)));
     if (cats.length) {
       const selectedTypeKeys = cats.map(normalizeFilterKey);
-      arr = arr.filter((p) => selectedTypeKeys.includes(normalizeFilterKey(p.subcategory ?? "")));
+      arr = arr.filter((p) => {
+        const productTypeKeys = [
+          normalizeFilterKey(p.subcategory ?? ""),
+          normalizeFilterKey(p.category ?? ""),
+        ];
+        return selectedTypeKeys.some((key) => productTypeKeys.includes(key));
+      });
     }
     if (brands.length) arr = arr.filter((p) => brands.includes(p.brand));
     if (colorHexes.length) arr = arr.filter((p) => productHasAnyColor(p, colorHexes));

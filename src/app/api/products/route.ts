@@ -9,7 +9,8 @@ export const revalidate = 60;
 
 // GET /api/products
 // Query params:
-//   ?category=fashion   filter by category slug
+//   ?category=fashion   filter by category slug (also includes child categories)
+//   ?sub=saree          optional sub/type/category slug matcher
 //   ?brand=urbanfit     filter by brand slug
 //   ?search=shirt       full-text search on name
 //   ?sort=lh|hl|new     price low-high, high-low, newest
@@ -21,32 +22,41 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
   const category = searchParams.get("category") ?? undefined;
-  const brand    = searchParams.get("brand")    ?? undefined;
-  const search   = searchParams.get("search")   ?? undefined;
-  const sort     = searchParams.get("sort")     ?? "new";
+  const sub = (searchParams.get("sub") ?? "").trim();
+  const brand = searchParams.get("brand") ?? undefined;
+  const search = searchParams.get("search") ?? undefined;
+  const sort = searchParams.get("sort") ?? "new";
   const featured = searchParams.get("featured") === "true" ? true : undefined;
   const trending = searchParams.get("trending") === "true" ? true : undefined;
-  const page     = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-  const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12")));
-  const skip     = (page - 1) * limit;
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12")));
+  const skip = (page - 1) * limit;
 
-  // Build where clause
+  const categoryFilters: Array<Record<string, unknown>> = [];
+  if (category) {
+    categoryFilters.push({ category: { slug: category } });
+    categoryFilters.push({ category: { parent: { slug: category } } });
+  }
+  if (sub) {
+    categoryFilters.push({ category: { slug: sub } });
+    categoryFilters.push({ subcategory: { equals: sub, mode: "insensitive" as const } });
+  }
+
   const where = {
     status: "ACTIVE" as const,
     ...(featured !== undefined && { featured }),
     ...(trending !== undefined && { trending }),
-    ...(category && { category: { slug: category } }),
-    ...(brand    && { brand:    { slug: brand } }),
-    ...(search   && {
+    ...(categoryFilters.length > 0 && { OR: categoryFilters }),
+    ...(brand && { brand: { slug: brand } }),
+    ...(search && {
       name: { contains: search, mode: "insensitive" as const },
     }),
   };
 
-  // Build orderBy
   const orderBy =
-    sort === "lh"  ? { price: "asc"  as const } :
-    sort === "hl"  ? { price: "desc" as const } :
-    /* new */        { createdAt: "desc" as const };
+    sort === "lh" ? { price: "asc" as const } :
+    sort === "hl" ? { price: "desc" as const } :
+    { createdAt: "desc" as const };
 
   const [products, total] = await Promise.all([
     db.product.findMany({
@@ -55,24 +65,23 @@ export async function GET(req: Request) {
       skip,
       take: limit,
       select: {
-        id:         true,
-        slug:       true,
-        name:       true,
-        price:      true,
-        oldPrice:   true,
-        stock:      true,
-        images:     true,
-        colors:     true,
-        colorImages:true,
-        sizes:      true,
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        oldPrice: true,
+        stock: true,
+        images: true,
+        colors: true,
+        colorImages: true,
+        sizes: true,
         badgeLabel: true,
-        badgeTone:  true,
-        featured:   true,
-        trending:   true,
-        subcategory:true,
+        badgeTone: true,
+        featured: true,
+        trending: true,
+        subcategory: true,
         category: { select: { name: true, slug: true } },
-        brand:    { select: { name: true } },
-        // Average rating for the card
+        brand: { select: { name: true } },
         reviews: {
           select: { rating: true },
         },
@@ -81,23 +90,22 @@ export async function GET(req: Request) {
     db.product.count({ where }),
   ]);
 
-  // Shape to match frontend Product type
   const shaped = products.map((p) => ({
-    id:         p.slug,          // use slug as id for URL-friendly routes
-    dbId:       p.id,
-    name:       p.name,
-    category:   p.category?.slug ?? "",
-    subcategory:p.subcategory ?? undefined,
-    brand:      p.brand?.name   ?? "",
-    price:      p.price,
-    oldPrice:   p.oldPrice  ?? undefined,
-    stock:      p.stock,
-    image:      p.images[0] ?? "",
-    images:     p.images,
-    colorImages:p.colorImages,
-    colors:     p.colors,
-    sizes:      p.sizes,
-    badge:      p.badgeLabel
+    id: p.slug,
+    dbId: p.id,
+    name: p.name,
+    category: p.category?.slug ?? "",
+    subcategory: p.subcategory ?? undefined,
+    brand: p.brand?.name ?? "",
+    price: p.price,
+    oldPrice: p.oldPrice ?? undefined,
+    stock: p.stock,
+    image: p.images[0] ?? "",
+    images: p.images,
+    colorImages: p.colorImages,
+    colors: p.colors,
+    sizes: p.sizes,
+    badge: p.badgeLabel
       ? { label: p.badgeLabel, tone: p.badgeTone ?? "new" }
       : undefined,
     rating:
