@@ -13,7 +13,7 @@ type HeroSlide = {
 };
 
 const emptyForm = (): Omit<HeroSlide, "id"> => ({
-  badge: "", title: "", subtitle: "", cta: "Shop Now", slug: "",
+  badge: "", title: "", subtitle: "", cta: "", slug: "",
   image: "", gradient: "from-zinc-900 via-black to-black", active: true, order: 0,
 });
 
@@ -127,9 +127,9 @@ export default function BannersPage() {
 
               {/* Info */}
               <div className="flex-1 px-4 py-3 min-w-0">
-                <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{s.title || "Hero banner"}</h3>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-1">Button: {s.cta || "Shop Now"}</p>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-1">/{s.slug || "fashion"}</p>
+                <h3 className="font-semibold text-slate-800 text-sm line-clamp-1">{s.title}</h3>
+                <p className="text-xs text-slate-500 mt-1 line-clamp-1">Button: {s.cta}</p>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-1">/{s.slug}</p>
               </div>
 
               {/* Actions */}
@@ -174,8 +174,8 @@ export default function BannersPage() {
                 <img src={form.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
               )}
               <div className="relative z-10">
-                <p className="text-white font-bold text-lg leading-tight">{form.title || "Hero banner"}</p>
-                <p className="text-white/80 text-xs mt-0.5 line-clamp-1">{form.cta || "Shop Now"}</p>
+                <p className="text-white font-bold text-lg leading-tight">{form.title}</p>
+                <p className="text-white/80 text-xs mt-0.5 line-clamp-1">{form.cta}</p>
               </div>
             </div>
 

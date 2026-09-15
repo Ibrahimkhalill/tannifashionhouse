@@ -22,10 +22,10 @@ function normalizeSlide(data: SlideInput) {
 
   return {
     badge: (data.badge ?? "").trim(),
-    title: title || "Hero Collection",
+    title,
     subtitle: (data.subtitle ?? "").trim(),
-    cta: cta || "Shop Now",
-    slug: slug || "fashion",
+    cta,
+    slug,
     image: data.image.trim(),
     gradient: (data.gradient ?? "").trim() || "from-zinc-900 via-black to-black",
     active: data.active ?? true,
