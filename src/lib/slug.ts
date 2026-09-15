@@ -1,4 +1,4 @@
-const BANGLA_CHAR_RE = /\p{Script=Bangla}/gu;
+const BANGLA_CHAR_RE = /[\u0980-\u09FF]/g;
 
 export function slugifyText(value: string): string {
   return value
