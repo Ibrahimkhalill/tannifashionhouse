@@ -654,7 +654,7 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                         {vt.icon}
                       </span>
                       <span className="flex flex-col min-w-0">
-                        <span className={`text-sm font-bold ${active ? "text-red-600" : "text-slate-700"}`}>{vt.label}</span>
+                      <span className={`text-sm font-semibold ${active ? "text-red-600" : "text-slate-700"}`}>{vt.label}</span>
                         <span className="text-xs text-slate-400 leading-snug">{vt.sub}</span>
                       </span>
                       {active && (
@@ -673,11 +673,11 @@ export function ProductFormPage({ mode, initialProduct }: Props) {
                   <div className="p-5 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200">
                     <FieldLabel required>Sale Price — what customers pay</FieldLabel>
                     <div className="relative max-w-xs">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-300">৳</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-semibold text-slate-300">৳</span>
                       <input type="number" min="0" value={form.price || ""} autoFocus
                         onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
                         placeholder="0"
-                        className="w-full h-12 pl-9 pr-4 rounded-xl border-2 border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-xl font-bold text-slate-900 outline-none transition bg-white" />
+                        className="w-full h-12 pl-9 pr-4 rounded-xl border-2 border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 text-base font-semibold text-slate-900 outline-none transition bg-white" />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
