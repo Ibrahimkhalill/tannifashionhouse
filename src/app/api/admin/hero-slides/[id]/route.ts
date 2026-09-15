@@ -3,32 +3,36 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { HeroSlideSchema, parseBody } from "@/lib/validators";
 
-function normalizeSlide(data: {
-  badge: string;
-  title: string;
-  subtitle: string;
-  cta: string;
-  slug: string;
+type SlideInput = {
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  cta?: string;
+  slug?: string;
   image: string;
-  gradient: string;
-  active: boolean;
-  order: number;
-}) {
-  const title = data.title.trim();
-  const slug = data.slug.trim();
-  const cta = data.cta.trim();
+  gradient?: string;
+  active?: boolean;
+  order?: number;
+};
+
+function normalizeSlide(data: SlideInput) {
+  const title = (data.title ?? "").trim();
+  const slug = (data.slug ?? "").trim();
+  const cta = (data.cta ?? "").trim();
 
   return {
-    ...data,
-    badge: data.badge.trim(),
+    badge: (data.badge ?? "").trim(),
     title: title || "Hero Collection",
-    subtitle: data.subtitle.trim(),
+    subtitle: (data.subtitle ?? "").trim(),
     cta: cta || "Shop Now",
     slug: slug || "fashion",
     image: data.image.trim(),
-    gradient: data.gradient.trim() || "from-zinc-900 via-black to-black",
+    gradient: (data.gradient ?? "").trim() || "from-zinc-900 via-black to-black",
+    active: data.active ?? true,
+    order: data.order ?? 0,
   };
 }
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -37,7 +41,7 @@ export async function PUT(
   if (error) return error;
 
   const { id } = await params;
-  const body   = await req.json().catch(() => null);
+  const body = await req.json().catch(() => null);
   const parsed = parseBody(HeroSlideSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
@@ -59,4 +63,3 @@ export async function DELETE(
   await db.heroSlide.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
-
