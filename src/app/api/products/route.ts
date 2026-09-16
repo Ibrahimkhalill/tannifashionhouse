@@ -32,21 +32,32 @@ export async function GET(req: Request) {
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12")));
   const skip = (page - 1) * limit;
 
-  const categoryFilters: Array<Record<string, unknown>> = [];
+  const andFilters: Array<Record<string, unknown>> = [];
+
   if (category) {
-    categoryFilters.push({ category: { slug: category } });
-    categoryFilters.push({ category: { parent: { slug: category } } });
+    andFilters.push({
+      OR: [
+        { category: { slug: category } },
+        { category: { parent: { slug: category } } },
+      ],
+    });
   }
+
   if (sub) {
-    categoryFilters.push({ category: { slug: sub } });
-    categoryFilters.push({ subcategory: { equals: sub, mode: "insensitive" as const } });
+    andFilters.push({
+      OR: [
+        { category: { slug: sub } },
+        { category: { parent: { slug: sub } } },
+        { subcategory: { equals: sub, mode: "insensitive" as const } },
+      ],
+    });
   }
 
   const where = {
     status: "ACTIVE" as const,
     ...(featured !== undefined && { featured }),
     ...(trending !== undefined && { trending }),
-    ...(categoryFilters.length > 0 && { OR: categoryFilters }),
+    ...(andFilters.length > 0 && { AND: andFilters }),
     ...(brand && { brand: { slug: brand } }),
     ...(search && {
       name: { contains: search, mode: "insensitive" as const },
