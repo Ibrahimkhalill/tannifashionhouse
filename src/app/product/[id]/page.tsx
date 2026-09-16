@@ -399,10 +399,10 @@ function ProductPage() {
       </div>
 
       {/* Main grid */}
-      <div className="mx-auto max-w-7xl px-4 pt-3 pb-5 lg:py-6 grid lg:grid-cols-[1fr_1fr] gap-6 lg:gap-10 xl:gap-16 animate-fade-up">
+      <div className="mx-auto max-w-7xl min-w-0 overflow-x-hidden px-4 pt-3 pb-5 lg:py-6 grid lg:grid-cols-[1fr_1fr] gap-6 lg:gap-10 xl:gap-16 animate-fade-up">
         {/* ── LEFT: Image gallery ── */}
         {/* z-30 ensures the zoom panel beats any stacking contexts created by transforms in the right column */}
-        <div className="relative z-30 lg:sticky lg:top-24 lg:self-start">
+        <div className="relative z-30 min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="flex flex-col gap-3 lg:flex-row lg:gap-3">
             {/* Vertical thumbnails — lg+ only (hidden when there's just one image) */}
             <div className={`${thumbs.length > 1 ? "hidden lg:flex" : "hidden"} flex-col gap-2 w-[72px] shrink-0 order-2 lg:order-1`}>
@@ -467,7 +467,7 @@ function ProductPage() {
                   aria-label="Previous image"
                   onMouseEnter={() => setZoom({ active: false, x: 0, y: 0 })}
                   onClick={() => { setColorOverride(null); setThumb((v) => (v - 1 + thumbs.length) % thumbs.length); }}
-                  className="absolute left-2.5 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95"
+                  className="absolute left-2.5 top-1/2 z-20 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95 sm:flex"
                 >
                   <ChevronLeft className="size-4.5" />
                 </button>
@@ -476,7 +476,7 @@ function ProductPage() {
                   aria-label="Next image"
                   onMouseEnter={() => setZoom({ active: false, x: 0, y: 0 })}
                   onClick={() => { setColorOverride(null); setThumb((v) => (v + 1) % thumbs.length); }}
-                  className="absolute right-2.5 top-1/2 z-20 -translate-y-1/2 flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95"
+                  className="absolute right-2.5 top-1/2 z-20 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground/80 shadow-sm backdrop-blur transition hover:bg-background hover:text-foreground active:scale-95 sm:flex"
                 >
                   <ChevronRight className="size-4.5" />
                 </button>
@@ -526,21 +526,23 @@ function ProductPage() {
               )}
 
                             {/* Horizontal thumbnails — tablet & mobile (hidden when there's just one image) */}
-              <div className={`${thumbs.length > 1 ? "lg:hidden flex" : "hidden"} w-full max-w-full overflow-x-auto overscroll-x-contain no-scrollbar gap-2 sm:gap-2.5 pt-1 pb-0.5`}>
-                {thumbs.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setColorOverride(null); setThumb(i); }}
-                    aria-label={`Image ${i + 1}`}
-                    className={`shrink-0 size-16 sm:size-[72px] rounded-lg sm:rounded-xl overflow-hidden bg-secondary transition-all duration-200 border-2 ${
-                      i === thumb
-                        ? "border-foreground shadow-sm"
-                        : "border-transparent opacity-80 hover:opacity-100 hover:border-border active:scale-[0.97]"
-                    }`}
-                  >
-                    <img src={img} alt="" className="size-full object-cover" />
-                  </button>
-                ))}
+              <div className={`${thumbs.length > 1 ? "block lg:hidden" : "hidden"} w-full min-w-0 max-w-full overflow-x-auto overflow-y-hidden overscroll-x-contain no-scrollbar pt-1 pb-0.5 [-webkit-overflow-scrolling:touch] [touch-action:pan-x]`}>
+                <div className="inline-flex min-w-max gap-2 sm:gap-2.5 pr-1">
+                  {thumbs.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setColorOverride(null); setThumb(i); }}
+                      aria-label={`Image ${i + 1}`}
+                      className={`shrink-0 size-16 sm:size-[72px] rounded-lg sm:rounded-xl overflow-hidden bg-secondary transition-all duration-200 border-2 ${
+                        i === thumb
+                          ? "border-foreground shadow-sm"
+                          : "border-transparent opacity-80 hover:opacity-100 hover:border-border active:scale-[0.97]"
+                      }`}
+                    >
+                      <img src={img} alt="" className="size-full object-cover" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -548,7 +550,7 @@ function ProductPage() {
 
         {/* ── RIGHT: Product info ── */}
         {/* z-10 keeps any locally-stacked elements (transforms, scales) BELOW the zoom panel */}
-        <div className="relative z-10 mt-2 lg:mt-0 flex flex-col">
+        <div className="relative z-10 mt-2 min-w-0 lg:mt-0 flex flex-col">
           {/* Category + brand */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
@@ -573,7 +575,7 @@ function ProductPage() {
           </div>
 
           {/* Title */}
-          <h1 className="mt-2 text-[22px] leading-[1.2] font-bold tracking-tight sm:text-[26px] sm:leading-[1.2] lg:text-[30px] lg:leading-tight">
+          <h1 className="mt-2 break-words text-[22px] leading-[1.2] font-bold tracking-tight sm:text-[26px] sm:leading-[1.2] lg:text-[30px] lg:leading-tight">
             {p.name}
           </h1>
 
