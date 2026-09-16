@@ -5,7 +5,7 @@ import { Layout } from "@/components/site/Layout";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
   ChevronRight, SlidersHorizontal, X, Search,
-  ArrowUpDown, LayoutGrid, List, ChevronDown, Check,
+  ArrowUpDown, LayoutGrid, List, ChevronDown, Check, Package,
 } from "lucide-react";
 import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -145,6 +145,7 @@ function CategoryPage() {
 
   const activeFilterCount =
     bands.length + sizes.length + cats.length + brands.length + colorHexes.length + (search ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
 
   const clearAll = () => {
     setBands([]);
@@ -452,13 +453,28 @@ function CategoryPage() {
               ))}
             </div>
           ) : list.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="size-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-                <Search className="size-7 text-muted-foreground" />
+            <div className="flex justify-center py-14 sm:py-20">
+              <div className="w-full max-w-lg rounded-3xl border border-border/70 bg-card/80 px-6 py-10 sm:px-8 text-center shadow-sm">
+                <div className="mx-auto mb-5 size-20 rounded-2xl border border-dashed border-border bg-secondary/60 flex items-center justify-center">
+                  <Package className="size-9 text-muted-foreground" />
+                </div>
+                <p className="text-xl font-semibold">Product not available</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {hasActiveFilters
+                    ? "No products match your current filters. Try changing filter options."
+                    : "No products are available in this category right now."}
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  {hasActiveFilters && (
+                    <button onClick={clearAll} className="h-10 px-6 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition">
+                      Clear filters
+                    </button>
+                  )}
+                  <Link href="/" className="h-10 px-6 rounded-full border text-sm font-medium inline-flex items-center hover:bg-secondary/70 transition">
+                    Continue shopping
+                  </Link>
+                </div>
               </div>
-              <p className="text-lg font-semibold">No products found</p>
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or search term</p>
-              <button onClick={clearAll} className="mt-5 h-10 px-6 rounded-full bg-foreground text-background text-sm font-medium">Clear all filters</button>
             </div>
           ) : view === "list" ? (
             <div className="space-y-3">
