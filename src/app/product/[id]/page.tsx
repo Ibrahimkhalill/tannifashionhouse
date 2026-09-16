@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Layout } from "@/components/site/Layout";
@@ -425,7 +425,7 @@ function ProductPage() {
                 onMouseEnter={() => setZoom((z) => ({ ...z, active: true }))}
                 onMouseLeave={() => setZoom({ active: false, x: 0, y: 0 })}
                 onMouseMove={handleMove}
-                className="relative aspect-square rounded-2xl bg-white overflow-hidden border lg:cursor-crosshair"
+                className="relative w-full max-w-full aspect-square rounded-2xl bg-white overflow-hidden border lg:cursor-crosshair touch-pan-y"
               >
                 {/* Shimmer until the active image is loaded */}
                 {!mainImgLoaded && <span aria-hidden className="skeleton-shimmer absolute inset-0" />}
@@ -525,8 +525,8 @@ function ProductPage() {
                 />
               )}
 
-              {/* Horizontal thumbnails — tablet & mobile (hidden when there's just one image) */}
-              <div className={`${thumbs.length > 1 ? "lg:hidden flex" : "hidden"} justify-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar pb-0.5 pt-1`}>
+                            {/* Horizontal thumbnails — tablet & mobile (hidden when there's just one image) */}
+              <div className={`${thumbs.length > 1 ? "lg:hidden flex" : "hidden"} w-full max-w-full overflow-x-auto overscroll-x-contain no-scrollbar gap-2 sm:gap-2.5 pt-1 pb-0.5`}>
                 {thumbs.map((img, i) => (
                   <button
                     key={i}

@@ -7,7 +7,6 @@ import type { HeroSlide } from "@/lib/content-types";
 import { HeroSkeleton } from "./skeletons";
 import { cachedJson } from "@/lib/api-cache";
 
-// Used only when a slide has no image of its own.
 const FALLBACK_HERO_IMG =
   "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop";
 
@@ -38,15 +37,15 @@ export function HeroSlider() {
   return (
     <section className="mx-auto w-full min-w-0 max-w-7xl overflow-x-clip px-4 pt-4 sm:pt-6">
       <div
-        className="relative min-h-[420px] w-full overflow-hidden rounded-3xl bg-neutral-900 sm:min-h-[500px] lg:min-h-[560px]"
+        className="relative h-[200px] w-full overflow-hidden rounded-3xl bg-neutral-900 min-[380px]:h-[220px] min-[440px]:h-[240px] sm:h-[320px] md:h-[420px] lg:min-h-[560px] lg:h-auto"
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {/* Editorial cover banners — full-bleed fashion image + readable scrim */}
         {slides.map((s, idx) => {
           const title = s.title?.trim() ?? "";
           const slug = s.slug?.trim() ?? "";
           const cta = s.cta?.trim() ?? "";
+          const hasOverlayContent = Boolean(s.badge || title || s.subtitle || cta);
           const href = slug ? `/category/${encodeURIComponent(slug)}` : "#";
 
           return (
@@ -59,11 +58,12 @@ export function HeroSlider() {
                 alt={title || "Hero banner"}
                 className={`absolute inset-0 size-full object-cover transition-transform duration-[6000ms] ease-out ${idx === i ? "scale-105" : "scale-100"}`}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent sm:hidden" />
+              {hasOverlayContent && (
+                <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-transparent" />
+              )}
 
-              <div className="relative z-10 flex h-full min-h-[420px] items-center sm:min-h-[500px] lg:min-h-[560px]">
-                <div className="max-w-lg px-6 py-10 sm:px-12 lg:px-16">
+              <div className="relative z-10 flex h-full items-center">
+                <div className="max-w-lg px-4 py-5 sm:px-12 sm:py-10 lg:px-16">
                   {s.badge && (
                     <span className="inline-flex items-center rounded-full bg-accent px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white sm:text-xs">
                       {s.badge}
@@ -97,19 +97,19 @@ export function HeroSlider() {
         <button
           onClick={prev}
           aria-label="Previous slide"
-          className="absolute left-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30 sm:flex"
+          className="absolute left-2.5 top-1/2 z-20 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30 min-[360px]:flex sm:left-4 sm:size-11"
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className="size-4 sm:size-5" />
         </button>
         <button
           onClick={next}
           aria-label="Next slide"
-          className="absolute right-4 top-1/2 z-20 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-white/30 sm:flex"
+          className="absolute right-2.5 top-1/2 z-20 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30 min-[360px]:flex sm:right-4 sm:size-11"
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className="size-4 sm:size-5" />
         </button>
 
-        <div className="absolute bottom-5 left-6 z-20 flex items-center gap-2 sm:left-12 lg:left-16">
+        <div className="absolute bottom-3 left-4 z-20 flex items-center gap-1.5 sm:bottom-5 sm:left-12 sm:gap-2 lg:left-16">
           {slides.map((s, idx) => (
             <button
               key={s.id}
