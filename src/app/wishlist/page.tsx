@@ -35,7 +35,7 @@ function WishlistPage() {
   };
 
   const moveAllToCart = () => {
-    items.forEach((p) => addToCart(p.id, { size: p.sizes[0] }));
+    items.forEach((p) => addToCart(p.id, { size: p.sizes[0], color: p.colors[0] }));
     toast.success(`${items.length} items added to cart`);
   };
 
@@ -202,14 +202,14 @@ function WishlistPage() {
                     <div className="flex items-center gap-1.5">
                       {/* Buy now */}
                       <button
-                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); toast.success("Added!", { description: p.name }); }}
+                        onClick={() => { addToCart(p.id, { size: p.sizes[0], color: p.colors[0] }); toast.success("Added!", { description: p.name }); }}
                         aria-label="Add to cart"
                         className="size-8 rounded-full bg-foreground text-background flex items-center justify-center hover:bg-accent transition"
                       >
                         <ShoppingCart className="size-3.5" />
                       </button>
                       <button
-                        onClick={() => { addToCart(p.id, { size: p.sizes[0] }); router.push("/checkout"); }}
+                        onClick={() => { addToCart(p.id, { size: p.sizes[0], color: p.colors[0] }); router.push("/checkout"); }}
                         aria-label="Buy now"
                         className="size-8 rounded-full bg-accent text-white flex items-center justify-center hover:opacity-80 transition"
                       >

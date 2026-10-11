@@ -372,3 +372,13 @@ model SiteConfig {
   key   String @id
   value String // JSON string — parse on read
 }
+
+// Fixed-window request counters for API rate limiting (see src/lib/rate-limit.ts).
+// Kept in Postgres because serverless instances don't share memory.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

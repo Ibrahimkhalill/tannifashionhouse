@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
 import { useProductCache } from "@/hooks/useProductCache";
+import { unitPrice } from "@/lib/variant-pricing";
 import { cachedJson } from "@/lib/api-cache";
 import { DEFAULT_SHIPPING_POLICY, type DeliveryAreaKey, type ShippingPolicy } from "@/lib/shipping-policy";
 
@@ -45,11 +46,14 @@ function CheckoutPage() {
   const selectedArea = policy.deliveryAreas[form.deliveryArea] ?? DEFAULT_SHIPPING_POLICY.deliveryAreas.inside;
   const deliveryArea = form.deliveryArea;
   const shippingCost = selectedArea.price;
-  const subtotal     = cartItems.reduce((sum, it) => sum + (it.p?.price ?? 0) * it.qty, 0);
+  // Same unitPrice() the order API uses, so the total shown is what gets charged.
+  const subtotal     = cartItems.reduce((sum, it) => sum + (it.p ? unitPrice(it.p, it.size, it.color) : 0) * it.qty, 0);
   const total        = subtotal - discount + shippingCost;
 
-  const applyCoupon = async () => {
-    const c = coupon.trim().toUpperCase();
+  const [appliedCoupon, setAppliedCoupon] = useState("");
+
+  const applyCoupon = async (code = coupon, silent = false) => {
+    const c = code.trim().toUpperCase();
     if (!c) return;
     try {
       const res = await fetch("/api/offers/validate", {
@@ -58,13 +62,26 @@ function CheckoutPage() {
         body: JSON.stringify({ code: c, subtotal }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error ?? "Invalid coupon"); return; }
+      if (!res.ok) {
+        setDiscount(0);
+        setAppliedCoupon("");
+        toast.error(data.error ?? "Invalid coupon");
+        return;
+      }
       setDiscount(data.discount ?? 0);
-      toast.success(`Coupon applied! ৳${data.discount} off`);
+      setAppliedCoupon(c);
+      if (!silent) toast.success(`Coupon applied! ৳${data.discount} off`);
     } catch {
-      toast.error("Could not validate coupon");
+      if (!silent) toast.error("Could not validate coupon");
     }
   };
+
+  // The discount depends on the subtotal — recheck it whenever the cart changes
+  // so the displayed total never drifts from what the server will charge.
+  useEffect(() => {
+    if (appliedCoupon) applyCoupon(appliedCoupon, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +107,7 @@ function CheckoutPage() {
           division: selectedArea.label,
           deliveryArea,
           payment:  "cod",
-          items:    cart.map((it) => ({ productId: it.id, qty: it.qty, size: it.size })),
+          items:    cart.map((it) => ({ productId: it.id, qty: it.qty, size: it.size, color: it.color })),
           couponCode: coupon.trim().toUpperCase() || undefined,
         }),
       });
@@ -160,7 +177,7 @@ function CheckoutPage() {
           const p = it.p;
           if (!p) return null;
           return (
-            <div key={it.id + (it.size ?? "")} className="flex gap-3 rounded-xl border border-border/70 bg-background p-3 lg:gap-3.5 lg:p-3.5">
+            <div key={it.id + (it.size ?? "") + (it.color ?? "")} className="flex gap-3 rounded-xl border border-border/70 bg-background p-3 lg:gap-3.5 lg:p-3.5">
               <div className="h-16 w-14 shrink-0 overflow-hidden rounded-lg bg-muted lg:h-20 lg:w-16">
                 <img src={p.image} alt={p.name} className="size-full object-cover" />
               </div>
@@ -182,7 +199,7 @@ function CheckoutPage() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Price amount={p.price * it.qty} size="sm" className="!font-semibold lg:!text-[15px]" />
+                    <Price amount={unitPrice(p, it.size, it.color) * it.qty} size="sm" className="!font-semibold lg:!text-[15px]" />
                     <button type="button" onClick={() => { removeFromCart(it.id); toast("Item removed"); }}
                       className="flex size-6 items-center justify-center text-muted-foreground/60 transition-colors hover:text-accent" aria-label="Remove">
                       <Trash2 size={12} strokeWidth={2} />
@@ -204,7 +221,7 @@ function CheckoutPage() {
             placeholder="Promo code"
             className="h-10 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm font-medium uppercase tracking-wide outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground" />
         </div>
-        <button type="button" onClick={applyCoupon}
+        <button type="button" onClick={() => applyCoupon()}
           className="h-10 shrink-0 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition hover:opacity-90">
           Apply
         </button>

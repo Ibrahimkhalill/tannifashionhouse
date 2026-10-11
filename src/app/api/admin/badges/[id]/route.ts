@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { BadgeSchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 const CONFIG_KEY = "badges";
 
@@ -37,14 +38,18 @@ export async function PUT(
   const parsed = parseBody(BadgeSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const badges = await readBadges();
-  const idx = badges.findIndex((b) => b.id === id);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const badges = await readBadges();
+    const idx = badges.findIndex((b) => b.id === id);
+    if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  badges[idx] = { ...parsed.data, status: parsed.data.status ?? "active", id };
-  await writeBadges(badges);
+    badges[idx] = { ...parsed.data, status: parsed.data.status ?? "active", id };
+    await writeBadges(badges);
 
-  return NextResponse.json({ badge: badges[idx] });
+    return NextResponse.json({ badge: badges[idx] });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }
 
 export async function DELETE(
@@ -55,8 +60,12 @@ export async function DELETE(
   if (error) return error;
 
   const { id } = await params;
-  const badges = (await readBadges()).filter((b) => b.id !== id);
-  await writeBadges(badges);
+  try {
+    const badges = (await readBadges()).filter((b) => b.id !== id);
+    await writeBadges(badges);
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

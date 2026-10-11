@@ -62,14 +62,20 @@ export const ReviewSchema = z.object({
   productId: z.string().min(1),
   rating:    z.number().int().min(1).max(5),
   text:      z.string().min(3, "Review too short").max(2000, "Review too long").trim(),
-  // Accepts remote URLs or inline data: URLs (uploaded photos before CDN).
-  images:    z.array(z.string()).max(3).optional(),
+  // Accepts https URLs or inline data: image URLs (the product page sends photos
+  // as data URLs). Capped at ~1.5 MB each so reviews can't bloat the DB / responses.
+  images:    z.array(
+    z.string().max(1_500_000, "Review photo too large").refine(
+      (s) => /^https:\/\//.test(s) || /^data:image\/(jpeg|png|webp|gif);base64,/.test(s),
+      "Invalid review photo",
+    ),
+  ).max(3).optional(),
   guestName: z.string().min(2).max(60).optional(),
 });
 
 export const ReviewReplySchema = z.object({
   text:     z.string().min(1).max(1000).trim(),
-  userName: z.string().min(2).max(60).trim(),
+  userName: z.string().max(60).optional(), // ignored — name comes from the session
 });
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
@@ -156,6 +162,9 @@ export const OfferSchema = z.object({
   maxUses:    z.number().int().min(0).default(0),
   expiryDate: z.string().datetime(),
   status:     z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
+}).refine((o) => o.type !== "PERCENT" || o.value <= 100, {
+  message: "Percent discount can't exceed 100",
+  path: ["value"],
 });
 
 // ─── Admin: Order status update ───────────────────────────────────────────────

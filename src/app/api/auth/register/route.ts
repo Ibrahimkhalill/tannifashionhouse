@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { RegisterSchema, parseBody } from "@/lib/validators";
+import { clientIp, limitOrNull, HOUR } from "@/lib/rate-limit";
 
 // POST /api/auth/register
 // Body: { name, phone, email?, password }
 // Signs the user up. No login happens here — they log in separately.
 export async function POST(req: Request) {
+  // Stops bulk fake sign-ups (accounts can review, reply and keep sessions).
+  const limited = await limitOrNull(`register:ip:${clientIp(req)}`, 5, HOUR,
+    "Too many sign-ups from this network — please try again later.");
+  if (limited) return limited;
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 

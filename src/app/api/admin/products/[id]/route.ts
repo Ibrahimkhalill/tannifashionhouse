@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { AdminProductSchema, parseBody } from "@/lib/validators";
 import { normalizeProductSlug } from "@/lib/slug";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 // GET /api/admin/products/:id
 export async function GET(
@@ -47,25 +48,29 @@ export async function PUT(
 
   const { variants, ...data } = parsed.data;
 
-  // Replace all variants
-  const product = await db.product.update({
-    where: { id },
-    data: {
-      ...data,
-      status:      data.status as "ACTIVE" | "DRAFT" | "ARCHIVED",
-      colors:      data.colors      ?? [],
-      colorImages: data.colorImages ?? [],
-      sizes:       data.sizes        ?? [],
-      tags:        data.tags         ?? [],
-      variants: {
-        deleteMany: {},
-        ...(variants?.length ? { createMany: { data: variants } } : {}),
+  try {
+    // Replace all variants
+    const product = await db.product.update({
+      where: { id },
+      data: {
+        ...data,
+        status:      data.status as "ACTIVE" | "DRAFT" | "ARCHIVED",
+        colors:      data.colors      ?? [],
+        colorImages: data.colorImages ?? [],
+        sizes:       data.sizes        ?? [],
+        tags:        data.tags         ?? [],
+        variants: {
+          deleteMany: {},
+          ...(variants?.length ? { createMany: { data: variants } } : {}),
+        },
       },
-    },
-    include: { variants: true },
-  });
+      include: { variants: true },
+    });
 
-  return NextResponse.json({ product });
+    return NextResponse.json({ product });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }
 
 // DELETE /api/admin/products/:id
@@ -77,6 +82,19 @@ export async function DELETE(
   if (error) return error;
 
   const { id } = await params;
-  await db.product.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+
+  try {
+    // Products that appear in past orders can't be hard-deleted (order history
+    // references them), so hide them from the store by archiving instead.
+    const ordered = await db.orderItem.count({ where: { productId: id } });
+    if (ordered > 0) {
+      await db.product.update({ where: { id }, data: { status: "ARCHIVED" } });
+      return NextResponse.json({ ok: true, archived: true });
+    }
+
+    await db.product.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

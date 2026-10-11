@@ -26,7 +26,7 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "cancelled",  label: "Cancelled" },
 ];
 
-type ApiOrderItem = { id: string; productId: string; qty: number; size: string | null; product: { name: string; images: string[]; slug: string } };
+type ApiOrderItem = { id: string; productId: string; qty: number; size: string | null; color: string | null; product: { name: string; images: string[]; slug: string } };
 type ApiOrder = {
   id: string; status: string; total: number; createdAt: string; payment: string;
   items: ApiOrderItem[];
@@ -180,7 +180,7 @@ export default function OrdersPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        o.items.forEach((it) => addToCart(it.productId, { qty: it.qty, size: it.size ?? undefined }));
+                        o.items.forEach((it) => addToCart(it.productId, { qty: it.qty, size: it.size ?? undefined, color: it.color ?? undefined }));
                         toast.success("Items added to cart");
                       }}
                       className="h-9 px-5 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-80 transition"

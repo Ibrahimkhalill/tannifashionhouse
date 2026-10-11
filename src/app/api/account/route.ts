@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AccountUpdateSchema, parseBody } from "@/lib/validators";
+import { limitOrNull, HOUR } from "@/lib/rate-limit";
 
 // GET /api/account — the signed-in user's profile
 export async function GET() {
@@ -21,6 +22,9 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Login required" }, { status: 401 });
+
+  const limited = await limitOrNull(`account:user:${session.user.id}`, 20, HOUR);
+  if (limited) return limited;
 
   const body   = await req.json().catch(() => null);
   const parsed = parseBody(AccountUpdateSchema, body);

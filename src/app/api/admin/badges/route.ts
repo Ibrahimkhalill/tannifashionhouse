@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { BadgeSchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 const CONFIG_KEY = "badges";
 
@@ -47,10 +48,14 @@ export async function POST(req: Request) {
   const parsed = parseBody(BadgeSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const badges = await readBadges();
-  const badge: Badge = { ...parsed.data, status: parsed.data.status ?? "active", id: `badge-${Date.now()}` };
-  badges.push(badge);
-  await writeBadges(badges);
+  try {
+    const badges = await readBadges();
+    const badge: Badge = { ...parsed.data, status: parsed.data.status ?? "active", id: `badge-${Date.now()}` };
+    badges.push(badge);
+    await writeBadges(badges);
 
-  return NextResponse.json({ badge }, { status: 201 });
+    return NextResponse.json({ badge }, { status: 201 });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

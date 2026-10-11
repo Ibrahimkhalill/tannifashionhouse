@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { clientIp, limitOrNull, MINUTE } from "@/lib/rate-limit";
 
 // Mask a phone/email so a random order-ID guesser can't harvest full contact
 // details, while still letting the customer recognise their own order.
@@ -15,16 +16,27 @@ function maskEmail(e: string) {
   return `${head}${"*".repeat(Math.max(1, name.length - head.length))}@${domain}`;
 }
 
-// GET /api/orders/:id
-// Anyone with the order ID can view its tracking status (the order ID is the
-// secret token). The owner and admins see full contact details; everyone else
-// gets phone/email masked to limit PII exposure.
+const digits = (p: string) => {
+  const d = p.replace(/\D/g, "");
+  return d.startsWith("880") ? "0" + d.slice(3) : d;
+};
+
+// GET /api/orders/:id[?phone=01XXXXXXXXX]
+// Anyone with the order ID can view its tracking status. Full contact details
+// (name, address, phone, email, notes) are only returned to the owner, admins,
+// or a guest who also supplies the order's phone number (the checkout page
+// stores it locally). Everyone else gets a redacted copy.
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Stops scanning order IDs / guessing the phone number for one.
+  const limited = await limitOrNull(`order-view:ip:${clientIp(req)}`, 60, 10 * MINUTE);
+  if (limited) return limited;
+
   const { id }  = await params;
   const session = await auth();
+  const phoneQ  = new URL(req.url).searchParams.get("phone") ?? "";
 
   const order = await db.order.findUnique({
     where: { id },
@@ -41,16 +53,21 @@ export async function GET(
 
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const isOwner = session?.user?.id && order.userId === session.user.id;
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isOwner    = session?.user?.id && order.userId === session.user.id;
+  const isAdmin    = session?.user?.role === "ADMIN";
+  const knowsPhone = phoneQ !== "" && digits(phoneQ) === digits(order.phone);
 
-  // Full details for the owner/admin; masked contact info for everyone else.
-  const safeOrder = isOwner || isAdmin
+  // Full details for the owner/admin/phone-holder; redacted for everyone else.
+  const safeOrder = isOwner || isAdmin || knowsPhone
     ? order
     : {
         ...order,
-        phone: maskPhone(order.phone),
-        email: order.email ? maskEmail(order.email) : order.email,
+        userId:  null,
+        name:    order.name.split(/\s+/)[0] ?? "",
+        phone:   maskPhone(order.phone),
+        email:   order.email ? maskEmail(order.email) : order.email,
+        address: "Hidden — sign in or use the device you ordered from",
+        notes:   null,
       };
 
   return NextResponse.json({ order: safeOrder });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ReviewSchema, parseBody } from "@/lib/validators";
+import { limitOrNull, HOUR } from "@/lib/rate-limit";
 
 // Cache each product's review list for 60s (GET only — POST below is never
 // cached regardless of this export).
@@ -49,6 +50,9 @@ export async function POST(req: Request) {
   if (session.user.role && session.user.role !== "CUSTOMER") {
     return NextResponse.json({ error: "Admin accounts can't post reviews" }, { status: 403 });
   }
+
+  const limited = await limitOrNull(`review:user:${session.user.id}`, 10, HOUR);
+  if (limited) return limited;
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

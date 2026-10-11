@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Price } from "./Price";
 import { useProductCache } from "@/hooks/useProductCache";
+import { unitPrice } from "@/lib/variant-pricing";
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { cart, setQty, removeFromCart, cartCount, cartHydrated } = useStore();
@@ -29,7 +30,10 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   if (!open) return null;
 
-  const subtotal = cart.reduce((sum, it) => sum + (productCache[it.id]?.price ?? 0) * it.qty, 0);
+  const subtotal = cart.reduce((sum, it) => {
+    const p = productCache[it.id];
+    return sum + (p ? unitPrice(p, it.size, it.color) : 0) * it.qty;
+  }, 0);
   const ship = subtotal > 1500 || subtotal === 0 ? 0 : 80;
   const total = subtotal + ship;
   const loading = !cartHydrated || (cart.length > 0 && productsLoading);
@@ -103,11 +107,12 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             cart.map((it) => {
               const p = productCache[it.id];
               if (!p) return null;
-              const origPrice = Math.round(p.price * 1.45);
+              const unit = unitPrice(p, it.size, it.color);
+              const origPrice = Math.round(unit * 1.45);
 
               return (
                 <div
-                  key={it.id + (it.size ?? "")}
+                  key={it.id + (it.size ?? "") + (it.color ?? "")}
                   className="flex gap-3.5 rounded-2xl border border-border/90 bg-card p-3.5 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <Link
@@ -145,7 +150,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
                     <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                       <div className="flex items-baseline gap-2">
-                        <Price amount={p.price * it.qty} size="sm" />
+                        <Price amount={unit * it.qty} size="sm" />
                         <Price amount={origPrice * it.qty} size="xs" muted struck />
                       </div>
 

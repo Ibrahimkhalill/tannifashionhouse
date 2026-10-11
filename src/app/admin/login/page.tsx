@@ -20,7 +20,9 @@ export default function AdminLoginPage() {
     try {
       const res = await signIn("credentials", { phone, password, redirect: false });
       if (res?.error) {
-        setError("Invalid phone number/email or password.");
+        setError(res.code === "rate_limited"
+          ? "Too many login attempts. Please wait 15 minutes and try again."
+          : "Invalid phone number/email or password.");
         return;
       }
       const session = await fetch("/api/auth/session").then((r) => r.json());

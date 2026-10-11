@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
+import { limitOrNull, MINUTE } from "@/lib/rate-limit";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,15 +9,34 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Detect the real image type from the file's magic bytes — the client-supplied
+// MIME type can't be trusted. SVG is deliberately not allowed (it can carry scripts).
+function sniffImageType(buf: Buffer): string | null {
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  if (buf.length >= 6 && /^GIF8[79]a$/.test(buf.subarray(0, 6).toString("ascii"))) return "image/gif";
+  if (buf.length >= 12 && buf.subarray(0, 4).toString("ascii") === "RIFF" && buf.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  return null;
+}
+
 // POST /api/upload
 // Body: FormData with a "file" field (image)
 // Returns: { url: string } — the Cloudinary CDN URL
-// Auth: any logged-in user OR admin uploading product/category images
+// Auth: admin only (product/category/banner images). Review photos are sent
+// inline with the review, not through this endpoint.
 export async function POST(req: Request) {
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Login required" }, { status: 401 });
   }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
+
+  // Generous for bulk product photo uploads, but caps Cloudinary usage if an
+  // admin session is ever abused.
+  const limited = await limitOrNull(`upload:user:${session.user.id}`, 100, 10 * MINUTE);
+  if (limited) return limited;
 
   const formData = await req.formData().catch(() => null);
   if (!formData) return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
@@ -32,11 +52,15 @@ export async function POST(req: Request) {
   }
 
   // Convert Blob to base64 data URI for Cloudinary upload
-  const buffer  = Buffer.from(await file.arrayBuffer());
-  const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const type   = sniffImageType(buffer);
+  if (!type) {
+    return NextResponse.json({ error: "Only JPEG, PNG, WebP or GIF images are allowed" }, { status: 415 });
+  }
+  const dataUri = `data:${type};base64,${buffer.toString("base64")}`;
 
   // Separate folder from the main store so images never mix in shared Cloudinary.
-  const folder = session.user.role === "ADMIN" ? "poshakbd/admin" : "poshakbd/reviews";
+  const folder = "poshakbd/admin";
 
   const result = await cloudinary.uploader.upload(dataUri, {
     folder,

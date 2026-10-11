@@ -6,6 +6,7 @@ import {
   DEFAULT_SHIPPING_POLICY,
   normalizePolicy,
 } from "@/lib/shipping-policy";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 async function readPolicy() {
   const row = await db.siteConfig.findUnique({ where: { key: SHIPPING_POLICY_KEY } });
@@ -34,11 +35,15 @@ export async function PUT(req: Request) {
 
   // Normalize/clamp before persisting so bad input can never corrupt the storefront.
   const policy = normalizePolicy(body.policy ?? body);
-  await db.siteConfig.upsert({
-    where: { key: SHIPPING_POLICY_KEY },
-    create: { key: SHIPPING_POLICY_KEY, value: JSON.stringify(policy) },
-    update: { value: JSON.stringify(policy) },
-  });
+  try {
+    await db.siteConfig.upsert({
+      where: { key: SHIPPING_POLICY_KEY },
+      create: { key: SHIPPING_POLICY_KEY, value: JSON.stringify(policy) },
+      update: { value: JSON.stringify(policy) },
+    });
 
-  return NextResponse.json({ policy });
+    return NextResponse.json({ policy });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

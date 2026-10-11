@@ -32,7 +32,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
   const loading = !wishlistHydrated || (wishlist.length > 0 && productsLoading);
 
   const addAllToCart = () => {
-    items.forEach((item) => addToCart(item.id, { size: item.sizes[0] }));
+    items.forEach((item) => addToCart(item.id, { size: item.sizes[0], color: item.colors[0] }));
     toast.success("Wishlist added to cart");
   };
 
@@ -104,7 +104,7 @@ export function WishlistDrawer({ open, onClose }: { open: boolean; onClose: () =
                     <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                       <p className="text-sm font-semibold">BDT {item.price.toLocaleString()}</p>
                       <button
-                        onClick={() => { addToCart(item.id, { size: item.sizes[0] }); toast.success("Added to cart", { description: item.name }); }}
+                        onClick={() => { addToCart(item.id, { size: item.sizes[0], color: item.colors[0] }); toast.success("Added to cart", { description: item.name }); }}
                         className="h-8 px-3 rounded-full bg-foreground text-background text-xs font-semibold inline-flex items-center gap-1.5 hover:opacity-90 transition"
                       >
                         <ShoppingCart className="size-3" /> Add

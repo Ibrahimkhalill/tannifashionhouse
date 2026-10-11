@@ -70,11 +70,12 @@ export default function ProductsPage() {
 
   const handleDelete = async (id: string) => {
     const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      toast.success("Product deleted");
+      toast.success(data.archived ? "Product has past orders, so it was archived (hidden from the store)" : "Product deleted");
       load();
     } else {
-      toast.error("Failed to delete product");
+      toast.error(data.error ?? "Failed to delete product");
     }
     setDeleteModal(null);
   };

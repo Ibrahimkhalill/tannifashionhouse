@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Price } from "./Price";
+import type { VariantLite } from "@/lib/variant-pricing";
 
 export type Product = {
   id: string;
@@ -27,6 +28,8 @@ export type Product = {
   liked?: boolean;
   /** Available quantity; undefined = not tracked */
   stock?: number;
+  /** Size/color variants with their own price & stock (detail endpoint only) */
+  variants?: VariantLite[];
 };
 
 /**
@@ -59,7 +62,7 @@ export function ProductCard({ p, compact = false }: { p: Product; compact?: bool
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(p.id, { size: p.sizes[0] });
+    addToCart(p.id, { size: p.sizes[0], color: p.colors[0] });
     toast.success("Added to cart", { description: p.name });
   };
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { HeroSlideSchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 type SlideInput = {
   badge?: string;
@@ -45,11 +46,15 @@ export async function PUT(
   const parsed = parseBody(HeroSlideSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const slide = await db.heroSlide.update({
-    where: { id },
-    data: normalizeSlide(parsed.data),
-  });
-  return NextResponse.json({ slide });
+  try {
+    const slide = await db.heroSlide.update({
+      where: { id },
+      data: normalizeSlide(parsed.data),
+    });
+    return NextResponse.json({ slide });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }
 
 export async function DELETE(
@@ -60,6 +65,10 @@ export async function DELETE(
   if (error) return error;
 
   const { id } = await params;
-  await db.heroSlide.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await db.heroSlide.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

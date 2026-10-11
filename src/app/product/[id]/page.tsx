@@ -31,6 +31,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { findVariant } from "@/lib/variant-pricing";
 import { toast } from "sonner";
 import { Price } from "@/components/site/Price";
 import { SizeGuideModal } from "@/components/site/SizeGuideModal";
@@ -152,7 +153,7 @@ function ProductPage() {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   // Selected color pins its image until another image is chosen
   const [colorOverride, setColorOverride] = useState<string | null>(null);
-  const [stock, setStock] = useState<number | null>(null);
+  const [baseStock, setStock] = useState<number | null>(null);
   useEffect(() => { if (p?.stock !== undefined) setStock(p.stock ?? null); }, [p]);
   // Gallery autoplay — pauses while zooming or hovering a color swatch
   const totalThumbs = Math.max(1, p?.images?.length ?? 1);
@@ -235,7 +236,14 @@ function ProductPage() {
   // Prefer the admin's colour name for this hex; fall back to a sensible guess.
   const colorName = (hex: string) => colorNames[(hex ?? "").toLowerCase()] ?? colorLabelFromHex(hex);
 
-  const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  // The chosen size/color variant decides the price and stock shown — and the
+  // order API charges the same price via the shared unitPrice() helper.
+  const selectedColor = p.colors[color];
+  const variant = findVariant(p.variants, size, selectedColor);
+  const price = variant?.price ?? p.price;
+  const stock = variant ? variant.stock : baseStock;
+
+  const discount = p.oldPrice && p.oldPrice > price ? Math.round((1 - price / p.oldPrice) * 100) : 0;
   // Real admin-authored rich description (HTML). Empty / blank editor state falls back to generic copy.
   const hasDescription =
     !!p.description && p.description.trim() !== "" && p.description.trim() !== "<p></p>";
@@ -274,14 +282,14 @@ function ProductPage() {
   const bgSize = (100 / LENS_SIZE) * 100; // ≈ 263%
 
   const handleAddToCart = () => {
-    addToCart(p.id, { qty, size });
+    addToCart(p.id, { qty, size, color: selectedColor });
     setAdded(true);
     toast.success("Added to cart", { description: `${p.name} × ${qty}` });
     setTimeout(() => setAdded(false), 2000);
   };
 
   const buyNow = () => {
-    addToCart(p.id, { qty, size });
+    addToCart(p.id, { qty, size, color: selectedColor });
     router.push("/checkout");
   };
 
@@ -642,12 +650,12 @@ function ProductPage() {
           {/* Price */}
           <div className="mt-4 flex flex-wrap items-baseline gap-2 sm:gap-3">
             <Price
-              amount={p.price}
+              amount={price}
               size="xl"
               tone="inherit"
               className="text-accent !font-black !tracking-tight !text-[26px] sm:!text-[28px] lg:!text-[32px]"
             />
-            {p.oldPrice && <Price amount={p.oldPrice} size="md" muted struck />}
+            {p.oldPrice && p.oldPrice > price && <Price amount={p.oldPrice} size="md" muted struck />}
             {discount > 0 && (
               <span className="inline-flex items-center px-2.5 py-0.5 text-[11px] sm:text-xs font-bold uppercase tracking-wide bg-red-50 text-red-600 rounded-full">
                 -{discount}%

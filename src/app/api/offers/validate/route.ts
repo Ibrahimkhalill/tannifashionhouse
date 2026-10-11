@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { clientIp, limitOrNull, MINUTE } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // Stops brute-forcing the list of valid coupon codes.
+  const limited = await limitOrNull(`coupon:ip:${clientIp(req)}`, 15, 10 * MINUTE,
+    "Too many coupon attempts — please try again in a few minutes.");
+  if (limited) return limited;
+
   const body = await req.json().catch(() => null);
   const code    = (body?.code as string | undefined)?.trim().toUpperCase();
   const subtotal = Number(body?.subtotal ?? 0);
@@ -23,10 +29,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Coupon usage limit reached" }, { status: 400 });
   }
 
-  const discount =
+  // Same cap as the order route: never more than 100% or more than the subtotal.
+  const raw =
     offer.type === "PERCENT"
-      ? Math.round(subtotal * (offer.value / 100))
+      ? Math.round(subtotal * (Math.min(offer.value, 100) / 100))
       : offer.value;
+  const discount = Math.max(0, Math.min(raw, subtotal));
 
   return NextResponse.json({ discount, type: offer.type, value: offer.value });
 }

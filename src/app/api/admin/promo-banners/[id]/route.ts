@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { PromoBannerSchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 export async function PUT(
   req: Request,
@@ -15,11 +16,15 @@ export async function PUT(
   const parsed = parseBody(PromoBannerSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const banner = await db.promoBanner.update({
-    where: { id },
-    data: { ...parsed.data, active: parsed.data.active ?? true, order: parsed.data.order ?? 0 },
-  });
-  return NextResponse.json({ banner });
+  try {
+    const banner = await db.promoBanner.update({
+      where: { id },
+      data: { ...parsed.data, active: parsed.data.active ?? true, order: parsed.data.order ?? 0 },
+    });
+    return NextResponse.json({ banner });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }
 
 export async function DELETE(
@@ -30,6 +35,10 @@ export async function DELETE(
   if (error) return error;
 
   const { id } = await params;
-  await db.promoBanner.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await db.promoBanner.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

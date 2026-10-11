@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { limitOrNull, MINUTE } from "@/lib/rate-limit";
 
 // DELETE /api/wishlist/:productId — remove one item from the wishlist
 export async function DELETE(
@@ -9,6 +10,9 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Login required" }, { status: 401 });
+
+  const limited = await limitOrNull(`wishlist:user:${session.user.id}`, 120, 10 * MINUTE);
+  if (limited) return limited;
 
   const { productId } = await params;
 

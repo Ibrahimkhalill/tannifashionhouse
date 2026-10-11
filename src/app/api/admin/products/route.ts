@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { AdminProductSchema, parseBody } from "@/lib/validators";
 import { normalizeProductSlug } from "@/lib/slug";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 // GET /api/admin/products — list all products (any status)
 export async function GET(req: Request) {
@@ -53,20 +54,24 @@ export async function POST(req: Request) {
 
   const { variants, ...data } = parsed.data;
 
-  const product = await db.product.create({
-    data: {
-      ...data,
-      status:     data.status as "ACTIVE" | "DRAFT" | "ARCHIVED",
-      colors:     data.colors     ?? [],
-      colorImages:data.colorImages ?? [],
-      sizes:      data.sizes       ?? [],
-      tags:       data.tags        ?? [],
-      variants: variants?.length
-        ? { createMany: { data: variants } }
-        : undefined,
-    },
-    include: { variants: true },
-  });
+  try {
+    const product = await db.product.create({
+      data: {
+        ...data,
+        status:     data.status as "ACTIVE" | "DRAFT" | "ARCHIVED",
+        colors:     data.colors     ?? [],
+        colorImages:data.colorImages ?? [],
+        sizes:      data.sizes       ?? [],
+        tags:       data.tags        ?? [],
+        variants: variants?.length
+          ? { createMany: { data: variants } }
+          : undefined,
+      },
+      include: { variants: true },
+    });
 
-  return NextResponse.json({ product }, { status: 201 });
+    return NextResponse.json({ product }, { status: 201 });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

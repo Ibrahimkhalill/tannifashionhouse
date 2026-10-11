@@ -4,8 +4,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { PRODUCTS } from "./products";
 import type { Product } from "@/components/site/ProductCard";
+import { unitPrice } from "./variant-pricing";
 
-export type CartItem = { id: string; qty: number; size?: string };
+export type CartItem = { id: string; qty: number; size?: string; color?: string };
 export type Order = {
   id: string;
   items: CartItem[];
@@ -57,7 +58,7 @@ type StoreCtx = {
   user: User | null;
   cartHydrated: boolean;
   wishlistHydrated: boolean;
-  addToCart: (id: string, opts?: { qty?: number; size?: string }) => void;
+  addToCart: (id: string, opts?: { qty?: number; size?: string; color?: string }) => void;
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clearCart: () => void;
@@ -177,11 +178,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const addToCart: StoreCtx["addToCart"] = (id, opts) => {
     setCart((c) => {
-      const existing = c.find((x) => x.id === id && x.size === opts?.size);
+      const existing = c.find((x) => x.id === id && x.size === opts?.size && x.color === opts?.color);
       if (existing) {
         return c.map((x) => x === existing ? { ...x, qty: x.qty + (opts?.qty ?? 1) } : x);
       }
-      return [...c, { id, qty: opts?.qty ?? 1, size: opts?.size }];
+      return [...c, { id, qty: opts?.qty ?? 1, size: opts?.size, color: opts?.color }];
     });
   };
   const removeFromCart = (id: string) => setCart((c) => c.filter((x) => x.id !== id));
@@ -213,7 +214,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const clearCompare = useCallback(() => setCompareList([]), [setCompareList]);
 
   const cartSubtotal = useMemo(
-    () => cart.reduce((s, it) => s + (resolveProduct(it.id)?.price ?? 0) * it.qty, 0),
+    () => cart.reduce((s, it) => {
+      const p = resolveProduct(it.id);
+      return s + (p ? unitPrice(p, it.size, it.color) : 0) * it.qty;
+    }, 0),
     [cart, resolveProduct],
   );
   const cartCount = cart.reduce((s, x) => s + x.qty, 0);

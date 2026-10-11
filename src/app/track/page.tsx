@@ -52,7 +52,7 @@ function TrackPage() {
             <input
               value={oid}
               onChange={(e) => setOid(e.target.value)}
-              placeholder="Order ID (e.g. BD-2026-12345)"
+              placeholder="Order ID (e.g. BD-2026-7KQ4M2XA)"
               className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button

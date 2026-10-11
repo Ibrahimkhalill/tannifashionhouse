@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PlaceOrderSchema, parseBody } from "@/lib/validators";
 import { sendOrderEmails } from "@/lib/email";
 import { DEFAULT_SHIPPING_POLICY, normalizePolicy, SHIPPING_POLICY_KEY } from "@/lib/shipping-policy";
+import { findVariant, unitPrice } from "@/lib/variant-pricing";
+import { clientIp, limitOrNull, HOUR } from "@/lib/rate-limit";
 
+// The order ID doubles as the guest tracking token, so it must not be guessable.
+// 8 chars from a 32-symbol alphabet (no 0/O/1/I) ≈ 10^12 combinations per year.
+const ID_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateOrderId(): string {
-  const year = new Date().getFullYear();
-  const rand = String(Math.floor(Math.random() * 99999)).padStart(5, "0");
+  const year  = new Date().getFullYear();
+  const bytes = randomBytes(8);
+  const rand  = Array.from(bytes, (b) => ID_ALPHABET[b % ID_ALPHABET.length]).join("");
   return `BD-${year}-${rand}`;
+}
+
+// Thrown inside the order transaction to abort it with a user-facing message.
+class OrderError extends Error {
+  constructor(message: string, public status = 409) { super(message); }
 }
 
 // POST /api/orders — place an order
@@ -26,6 +38,12 @@ export async function POST(req: Request) {
       { status: 403 },
     );
   }
+
+  // Per-IP cap on top of the per-phone guard below — stops fake COD orders
+  // spread across many phone numbers.
+  const limited = await limitOrNull(`order:ip:${clientIp(req)}`, 10, HOUR,
+    "Too many orders from this network — please try again later or contact us.");
+  if (limited) return limited;
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -45,7 +63,10 @@ export async function POST(req: Request) {
       OR: [{ id: { in: productIds } }, { slug: { in: productIds } }],
       status: "ACTIVE",
     },
-    select: { id: true, slug: true, price: true, stock: true, name: true, images: true },
+    select: {
+      id: true, slug: true, price: true, stock: true, name: true, images: true,
+      variants: { select: { id: true, size: true, color: true, price: true, stock: true } },
+    },
   });
 
   if (products.length === 0) {
@@ -59,59 +80,9 @@ export async function POST(req: Request) {
     productMap.set(p.slug, p);
   }
 
-  // ── 2. Validate coupon if provided ────────────────────────────────────────
-  let discount = 0;
-  if (couponCode) {
-    const offer = await db.offer.findFirst({
-      where: {
-        code:   couponCode.toUpperCase(),
-        status: "ACTIVE",
-        expiryDate: { gte: new Date() },
-      },
-    });
-    if (offer) {
-      const subtotalForCoupon = items.reduce((s, i) => {
-        const p = productMap.get(i.productId);
-        return s + (p ? p.price * i.qty : 0);
-      }, 0);
-      if (subtotalForCoupon >= offer.minOrder) {
-        discount = offer.type === "PERCENT"
-          ? Math.round(subtotalForCoupon * offer.value / 100)
-          : offer.value;
-        // Increment usedCount (fire-and-forget, don't block order)
-        db.offer.update({ where: { id: offer.id }, data: { usedCount: { increment: 1 } } })
-          .catch(() => {});
-      }
-    }
-  }
-
-  // ── 3. Build order items with price snapshots ─────────────────────────────
-  const orderItems = items.flatMap((i) => {
-    const p = productMap.get(i.productId);
-    if (!p) return [];
-    return [{
-      productId: p.id,
-      qty:       i.qty,
-      size:      i.size  ?? null,
-      color:     i.color ?? null,
-      price:     p.price, // snapshot — never changes after order
-    }];
-  });
-
-  const subtotal     = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
-  let shippingPolicy = DEFAULT_SHIPPING_POLICY;
-  const policyRow = await db.siteConfig.findUnique({ where: { key: SHIPPING_POLICY_KEY } });
-  if (policyRow?.value) {
-    try {
-      shippingPolicy = normalizePolicy(JSON.parse(policyRow.value));
-    } catch {
-      shippingPolicy = DEFAULT_SHIPPING_POLICY;
-    }
-  }
-  const shippingCost = shippingPolicy.deliveryAreas[deliveryArea]?.price ?? DEFAULT_SHIPPING_POLICY.deliveryAreas[deliveryArea].price;
-  const total        = subtotal - discount + shippingCost;
-
   // ── Fraud / spam guard (COD) — rate-limit by phone ────────────────────────
+  // Runs before anything is reserved so a rejected request never uses up a
+  // coupon or stock.
   const nowMs = Date.now();
   const dupe = await db.order.findFirst({
     where: { phone, createdAt: { gte: new Date(nowMs - 90_000) } }, // same number within 90s
@@ -133,6 +104,57 @@ export async function POST(req: Request) {
     );
   }
 
+  // ── 2. Build order items with price snapshots ─────────────────────────────
+  // Price comes from the matching size/color variant (same unitPrice() the
+  // storefront displays), falling back to the base price.
+  const orderItems = items.flatMap((i) => {
+    const p = productMap.get(i.productId);
+    if (!p) return [];
+    return [{
+      productId: p.id,
+      qty:       i.qty,
+      size:      i.size  ?? null,
+      color:     i.color ?? null,
+      price:     unitPrice(p, i.size, i.color), // snapshot — never changes after order
+    }];
+  });
+
+  const subtotal = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
+
+  // ── 3. Validate coupon if provided ────────────────────────────────────────
+  // usedCount is incremented inside the order transaction below, so it only
+  // counts orders that were actually created.
+  let discount = 0;
+  let offer: { id: string; maxUses: number } | null = null;
+  if (couponCode) {
+    const found = await db.offer.findUnique({ where: { code: couponCode.trim().toUpperCase() } });
+    if (!found || found.status !== "ACTIVE" || found.expiryDate < new Date()) {
+      return NextResponse.json({ error: "Coupon is invalid or has expired" }, { status: 400 });
+    }
+    if (found.maxUses > 0 && found.usedCount >= found.maxUses) {
+      return NextResponse.json({ error: "Coupon usage limit reached" }, { status: 400 });
+    }
+    if (subtotal >= found.minOrder) {
+      const raw = found.type === "PERCENT"
+        ? Math.round(subtotal * Math.min(found.value, 100) / 100)
+        : found.value;
+      discount = Math.min(raw, subtotal); // never discount below zero
+      offer    = { id: found.id, maxUses: found.maxUses };
+    }
+  }
+
+  let shippingPolicy = DEFAULT_SHIPPING_POLICY;
+  const policyRow = await db.siteConfig.findUnique({ where: { key: SHIPPING_POLICY_KEY } });
+  if (policyRow?.value) {
+    try {
+      shippingPolicy = normalizePolicy(JSON.parse(policyRow.value));
+    } catch {
+      shippingPolicy = DEFAULT_SHIPPING_POLICY;
+    }
+  }
+  const shippingCost = shippingPolicy.deliveryAreas[deliveryArea]?.price ?? DEFAULT_SHIPPING_POLICY.deliveryAreas[deliveryArea].price;
+  const total        = subtotal - discount + shippingCost;
+
   // ── 4. Generate unique order ID (retry on collision) ─────────────────────
   let orderId = generateOrderId();
   for (let i = 0; i < 5; i++) {
@@ -141,27 +163,75 @@ export async function POST(req: Request) {
     orderId = generateOrderId();
   }
 
-  // ── 5. Create the order ───────────────────────────────────────────────────
-  const order = await db.order.create({
-    data: {
-      id:           orderId,
-      userId:       session?.user?.id ?? null,
-      name,
-      phone,
-      email:        email || null,
-      address,
-      district,
-      division,
-      notes:        notes ?? null,
-      subtotal,
-      shippingCost,
-      discount,
-      total,
-      payment,
-      items: { createMany: { data: orderItems } },
-    },
-    include: { items: true },
-  });
+  // ── 5. Reserve stock + coupon and create the order atomically ────────────
+  // Each decrement is conditional (stock >= qty), so two buyers racing for the
+  // last unit can't both succeed — the loser's transaction rolls back.
+  const qtyByProduct = new Map<string, number>();
+  for (const it of orderItems) qtyByProduct.set(it.productId, (qtyByProduct.get(it.productId) ?? 0) + it.qty);
+
+  let order;
+  try {
+    order = await db.$transaction(async (tx) => {
+      for (const [productId, qty] of qtyByProduct) {
+        const res = await tx.product.updateMany({
+          where: { id: productId, stock: { gte: qty } },
+          data:  { stock: { decrement: qty } },
+        });
+        if (res.count === 0) {
+          const p = productMap.get(productId);
+          throw new OrderError(`Sorry, "${p?.name ?? "an item"}" is out of stock or doesn't have enough quantity left.`);
+        }
+      }
+
+      // The chosen size/color variant must have enough stock too — and it's kept
+      // in sync because the admin form derives the product total from variants.
+      for (const it of orderItems) {
+        const p = productMap.get(it.productId);
+        const variant = findVariant(p?.variants, it.size, it.color);
+        if (!variant) continue;
+        const res = await tx.productVariant.updateMany({
+          where: { id: variant.id, stock: { gte: it.qty } },
+          data:  { stock: { decrement: it.qty } },
+        });
+        if (res.count === 0) {
+          const opt = [it.size, it.color].filter(Boolean).join(" / ");
+          throw new OrderError(`Sorry, "${p?.name ?? "an item"}"${opt ? ` (${opt})` : ""} is out of stock or doesn't have enough quantity left.`);
+        }
+      }
+
+      if (offer) {
+        const res = await tx.offer.updateMany({
+          where: { id: offer.id, ...(offer.maxUses > 0 ? { usedCount: { lt: offer.maxUses } } : {}) },
+          data:  { usedCount: { increment: 1 } },
+        });
+        if (res.count === 0) throw new OrderError("Coupon usage limit reached", 400);
+      }
+
+      return tx.order.create({
+        data: {
+          id:           orderId,
+          userId:       session?.user?.id ?? null,
+          name,
+          phone,
+          email:        email || null,
+          address,
+          district,
+          division,
+          notes:        notes ?? null,
+          subtotal,
+          shippingCost,
+          discount,
+          total,
+          payment,
+          items: { createMany: { data: orderItems } },
+        },
+        include: { items: true },
+      });
+    });
+  } catch (e) {
+    if (e instanceof OrderError) return NextResponse.json({ error: e.message }, { status: e.status });
+    throw e;
+  }
 
   // ── 6. Send confirmation email to customer + notify admin (never blocks the order) ──
   try {

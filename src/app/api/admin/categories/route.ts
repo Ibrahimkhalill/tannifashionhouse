@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { CategorySchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -22,11 +23,15 @@ export async function POST(req: Request) {
   const parsed = parseBody(CategorySchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const category = await db.category.create({
-    data: {
-      ...parsed.data,
-      status: parsed.data.status as "ACTIVE" | "INACTIVE",
-    },
-  });
-  return NextResponse.json({ category }, { status: 201 });
+  try {
+    const category = await db.category.create({
+      data: {
+        ...parsed.data,
+        status: parsed.data.status as "ACTIVE" | "INACTIVE",
+      },
+    });
+    return NextResponse.json({ category }, { status: 201 });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

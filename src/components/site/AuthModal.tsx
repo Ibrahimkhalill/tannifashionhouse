@@ -44,7 +44,9 @@ export function AuthModal({ open, onClose, defaultTab = "login" }: AuthModalProp
     try {
       const res = await signIn("credentials", { phone: identifier, password: pw, redirect: false });
       if (res?.error) {
-        toast.error("Invalid phone/email or password");
+        toast.error(res.code === "rate_limited"
+          ? "Too many login attempts — please wait 15 minutes and try again"
+          : "Invalid phone/email or password");
         return;
       }
       login({ name: identifier, phone: identifier });

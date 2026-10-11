@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { HeroSlideSchema, parseBody } from "@/lib/validators";
+import { prismaErrorResponse } from "@/lib/api-errors";
 
 type SlideInput = {
   badge?: string;
@@ -49,8 +50,12 @@ export async function POST(req: Request) {
   const parsed = parseBody(HeroSlideSchema, body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const slide = await db.heroSlide.create({
-    data: normalizeSlide(parsed.data),
-  });
-  return NextResponse.json({ slide }, { status: 201 });
+  try {
+    const slide = await db.heroSlide.create({
+      data: normalizeSlide(parsed.data),
+    });
+    return NextResponse.json({ slide }, { status: 201 });
+  } catch (e) {
+    return prismaErrorResponse(e);
+  }
 }

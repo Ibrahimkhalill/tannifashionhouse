@@ -24,6 +24,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Price } from "@/components/site/Price";
 import { cachedJson } from "@/lib/api-cache";
 import { useProductCache } from "@/hooks/useProductCache";
+import { unitPrice } from "@/lib/variant-pricing";
 
 const FREE_SHIP_THRESHOLD = 1500;
 
@@ -31,8 +32,11 @@ function CartPage() {
   const { cart, setQty, removeFromCart, toggleWishlist, cartHydrated } =
     useStore();
   const { productsById: productCache, loading: productsLoading } = useProductCache(cart.map((it) => it.id));
-  const items = cart.map((it) => ({ ...it, p: productCache[it.id] })).filter((x) => x.p);
-  const subtotal = items.reduce((s, it) => s + (it.p?.price ?? 0) * it.qty, 0);
+  const items = cart
+    .map((it) => ({ ...it, p: productCache[it.id] }))
+    .filter((x) => x.p)
+    .map((it) => ({ ...it, unit: unitPrice(it.p, it.size, it.color) }));
+  const subtotal = items.reduce((s, it) => s + it.unit * it.qty, 0);
 
   const shipping = subtotal >= FREE_SHIP_THRESHOLD || items.length === 0 ? 0 : 80;
   const total = Math.max(0, subtotal + shipping);
@@ -126,10 +130,10 @@ function CartPage() {
               {/* Items list — horizontal cards on mobile, same structure scales up on desktop. */}
               <ul className="mt-3 flex flex-col gap-3 lg:mt-5 lg:gap-4">
                 {items.map((it) => {
-                  const origPrice = Math.round(it.p.price * 1.45);
+                  const origPrice = Math.round(it.unit * 1.45);
                   return (
                     <li
-                      key={it.id + (it.size ?? "")}
+                      key={it.id + (it.size ?? "") + (it.color ?? "")}
                       className="
                         flex gap-3 rounded-[14px] border border-border/60 bg-card p-3
                         shadow-[0_1px_3px_oklch(0_0_0/0.04)]
@@ -179,7 +183,7 @@ function CartPage() {
                         {/* Row 2 — price (18px bold) + quantity pill */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-baseline gap-2">
-                            <Price amount={it.p.price * it.qty} size="lg" className="!font-bold" />
+                            <Price amount={it.unit * it.qty} size="lg" className="!font-bold" />
                             <Price
                               amount={origPrice * it.qty}
                               size="xs"

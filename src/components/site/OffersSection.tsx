@@ -62,7 +62,7 @@ function DealCard({ p }: { p: Product }) {
           </div>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); addToCart(p.id, { size: p.sizes[0] }); toast.success("Added to cart"); }}
+            onClick={(e) => { e.preventDefault(); addToCart(p.id, { size: p.sizes[0], color: p.colors[0] }); toast.success("Added to cart"); }}
             className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-white transition hover:scale-110"
           >
             <ShoppingCart className="size-3.5" />
