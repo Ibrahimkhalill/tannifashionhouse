@@ -7,6 +7,8 @@ const USER = process.env.SMTP_USER;
 const PASS = process.env.SMTP_PASS;
 const FROM = process.env.SMTP_FROM || (USER ? `Tanni Fashion House <${USER}>` : undefined);
 const ADMIN_EMAIL = process.env.ADMIN_NOTIFY_EMAIL || USER;
+// Where customer replies go (FROM is usually a noreply address).
+const REPLY_TO = process.env.SMTP_REPLY_TO || process.env.ADMIN_NOTIFY_EMAIL || undefined;
 const BRAND = "Tanni Fashion House";
 
 export type OrderEmailItem = { name: string; qty: number; price: number; size?: string | null; color?: string | null };
@@ -95,14 +97,14 @@ export async function sendOrderEmails(o: OrderEmailInfo) {
   const tasks: Promise<unknown>[] = [];
   if (o.email) {
     tasks.push(transport.sendMail({
-      from: FROM, to: o.email,
+      from: FROM, to: o.email, replyTo: REPLY_TO,
       subject: `Order confirmed — ${o.id} · Tanni Fashion House`,
       html: orderHtml(o, false),
     }));
   }
   if (ADMIN_EMAIL) {
     tasks.push(transport.sendMail({
-      from: FROM, to: ADMIN_EMAIL,
+      from: FROM, to: ADMIN_EMAIL, replyTo: o.email || undefined,
       subject: `🛎️ New order ${o.id} — ${tk(o.total)}`,
       html: orderHtml(o, true),
     }));
