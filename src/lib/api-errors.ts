@@ -7,8 +7,11 @@ export function prismaErrorResponse(e: unknown) {
   if (e instanceof Prisma.PrismaClientKnownRequestError) {
     switch (e.code) {
       case "P2002": { // unique constraint
+        // meta.target is empty with driver adapters, so fall back to the message
+        // ("Unique constraint failed on the fields: (`slug`)").
         const target = (e.meta?.target as string[] | string | undefined) ?? "";
-        const field = Array.isArray(target) ? target.join(", ") : String(target);
+        const field = (Array.isArray(target) ? target.join(", ") : String(target))
+          || (e.message.match(/fields: \(([^)]+)\)/)?.[1] ?? "").replace(/`/g, "");
         return NextResponse.json(
           { error: field ? `A record with this ${field} already exists` : "This record already exists" },
           { status: 409 },
