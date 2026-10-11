@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       OR: [{ id: { in: productIds } }, { slug: { in: productIds } }],
       status: "ACTIVE",
     },
-    select: { id: true, slug: true, price: true, stock: true, name: true },
+    select: { id: true, slug: true, price: true, stock: true, name: true, images: true },
   });
 
   if (products.length === 0) {
@@ -168,8 +168,11 @@ export async function POST(req: Request) {
     await sendOrderEmails({
       id: order.id, name, phone, email: email || null,
       address, district, division,
+      notes: notes ?? null, payment,
+      deliveryLabel: shippingPolicy.deliveryAreas[deliveryArea]?.label,
       items: orderItems.map((it) => ({
         name: productMap.get(it.productId)?.name ?? "Item",
+        image: productMap.get(it.productId)?.images[0] ?? null,
         qty: it.qty, price: it.price, size: it.size, color: it.color,
       })),
       subtotal, shippingCost, discount, total,
